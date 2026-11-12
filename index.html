@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Outlet and voucher dashboard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#f3f5f2;--card:#fff;--ink:#17262b;--mute:#5d6e71;--line:#dce2de;--acc:#0f766e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1719;--card:#172124;--ink:#e6eeec;--mute:#93a5a8;--line:#2a393c;--acc:#2dd4bf}}
+:root[data-theme="dark"]{--bg:#0f1719;--card:#172124;--ink:#e6eeec;--mute:#93a5a8;--line:#2a393c;--acc:#2dd4bf}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1280px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:0 0 2px;font-weight:600}h2{font-size:14px;margin:0 0 8px;font-weight:600}
+.sub{color:var(--mute);margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card)}
+.drop.on{border-color:var(--acc)}
+button,select,input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.st{font-size:12px;color:var(--mute)}.st b{color:var(--acc)}
+.bar{display:flex;flex-wrap:wrap;gap:8px 14px;margin:12px 0;align-items:center}
+.chips{display:flex;gap:4px;flex-wrap:wrap;align-items:center}.chips span{color:var(--mute);font-size:12px;margin-right:2px}
+.chips button{padding:4px 10px;border-radius:99px}.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+.kpi .n{font-size:26px;font-weight:600;line-height:1.1}.kpi .l{color:var(--mute);font-size:12px}
+.split{display:flex;gap:10px;font-size:13px;margin-top:4px}.split b{font-size:20px;display:block}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.w{grid-column:1/-1}.ch{position:relative;height:260px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;white-space:nowrap}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{color:var(--mute);font-weight:500}td.r,th.r{text-align:right}
+.dq{columns:2 280px;margin:0;padding-left:18px}.dq li{margin-bottom:4px}
+.pill{display:inline-block;padding:0 8px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
+[hidden]{display:none!important}
+body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,body.team #fs,body.team #tpw,body.team #tpw2,body.team #tex,body.team #drop>.st:not([id]){display:none!important}
+#lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}.lockc{max-width:380px;width:100%}
+#sv button{padding:0 6px;margin:0 6px 0 2px}
+.rc{columns:2 360px;column-gap:28px}.rc>div{break-inside:avoid;margin-bottom:12px}.rules h3{font-size:13px;margin:0 0 4px}.rules ul{margin:0;padding-left:18px}.rules li{margin-bottom:4px}details{margin-top:6px}
+.leg{display:flex;gap:12px;font-size:12px;color:var(--mute);margin-top:6px}.leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
+#empty{padding:30px;text-align:center;color:var(--mute)}
+</style></head><body><div id="lock" hidden><div class="card lockc"><h1>Team dashboard</h1><p class="st">Enter the team password to open the dashboard.</p><input type="password" id="lpw" placeholder="Password" autocomplete="current-password" aria-label="Password" style="width:100%;margin:6px 0"><button class="pri" id="lgo">Unlock</button><p class="st" id="lmsg" role="status"></p></div></div><main>
+<h1>Outlet and voucher dashboard</h1>
+<p class="sub">Upload the raw exports as they come. Cleaning and linking happen in your browser.</p>
+<div class="drop" id="drop">
+ <input type="file" id="f" accept=".csv,text/csv" multiple hidden>
+ <button class="pri" id="pick">Choose CSV files</button><select id="mode" aria-label="When uploading"><option value="add">Add to saved data</option><option value="replace">Replace saved data</option></select><button id="bkup">Save backup</button><button id="rstr">Restore backup</button><input type="file" id="rf" accept=".json,.gz,application/json,application/gzip" hidden><input type="password" id="tpw" placeholder="Team password (12+ characters)" autocomplete="new-password" aria-label="Team password"><input type="password" id="tpw2" placeholder="Repeat password" autocomplete="new-password" aria-label="Repeat password"><button class="pri" id="tex">Export team data</button>
+ <span class="st">Drop the outlets, users, vouchers, recommendations, nutrition plans and customers files together or one at a time. Each file is recognised by its columns. By default new files are added to the data already saved: matching records are updated and older records are kept.</span>
+ <span class="st" id="tinfo"></span><span class="st" id="fs"></span><span class="st" id="sv"></span><span class="st" id="xmsg" role="status"></span>
+</div>
+<div class="chips" id="tabs" style="margin:12px 0"></div>
+<div class="bar" id="dbar" hidden><span class="st">Date</span>
+ <select id="d-pre" aria-label="Period"><option value="">All time</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option><option value="tm">This month</option><option value="lm">Last month</option><option value="ty">This year</option><option value="ly">Last year</option></select>
+ <select id="d-yr" aria-label="Year"></select><select id="d-mo" aria-label="Month"></select>
+ <label class="st">From <input type="date" id="d-0"></label><label class="st">To <input type="date" id="d-1"></label>
+ <select id="d-g" aria-label="Group charts by"><option value="auto">Group by: auto</option><option value="day">Group by: day</option><option value="week">Group by: week</option><option value="month">Group by: month</option><option value="year">Group by: year</option></select>
+ <button id="d-x">Clear dates</button><span class="st" id="d-n"></span></div>
+<div id="app" hidden>
+<div class="bar">
+ <div class="chips" id="c-cat"></div><div class="chips" id="c-vt"></div><div class="chips" id="c-nc"></div>
+ <select id="s-state" aria-label="State"></select><select id="s-city" aria-label="City"></select>
+ <label class="st"><input type="checkbox" id="t-test"> Include test accounts</label><button class="pri" id="xlo">Download Excel</button>
+</div>
+<div class="kpis" id="kpis"></div>
+<div class="grid">
+ <div class="card"><h2>Outlets by category</h2><div class="ch"><canvas id="g1"></canvas></div></div>
+ <div class="card"><h2>Stores by state: GC and other stores</h2><div class="ch"><canvas id="g2"></canvas></div></div>
+ <div class="card"><h2>Vouchers validated, by outlet type</h2><div class="ch"><canvas id="g3"></canvas></div></div>
+ <div class="card"><h2>Vouchers validated over time</h2><div class="ch"><canvas id="g4"></canvas></div></div>
+ <div class="card"><h2>NC proposals: where they were validated</h2><div class="ch"><canvas id="g5"></canvas></div></div>
+ <div class="card"><h2>Outlet map</h2><div class="ch"><canvas id="map"></canvas></div><div class="leg" id="leg"></div></div>
+ <div class="card w"><h2>NC performance</h2><p class="st">Customers are counted once each by phone number (email or name if there is no phone). Click an NC to filter the whole page to their proposals and see their customers. Click again to clear.</p><div class="tw"><table><thead><tr><th>NC</th><th class="r">Proposals</th><th class="r">Customers validated</th><th class="r">Outlets</th><th class="r">At GC</th><th class="r">At Store</th><th class="r">At other</th><th class="r">Amount</th></tr></thead><tbody id="nct"></tbody></table></div><div id="cust"></div></div>
+ <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">Outlets</h2><input id="q" placeholder="Search name or city" aria-label="Search"><span class="st" id="cnt"></span></div>
+  <div class="tw"><table><thead><tr><th>Outlet</th><th>Type</th><th>City</th><th>State</th><th class="r">Unique customers</th><th class="r">Vouchers</th><th class="r">Prescription</th><th class="r">Proposal</th><th>NC (proposals)</th><th class="r">Amount</th></tr></thead><tbody id="tb"></tbody></table></div>
+  <p><button id="more">Show more</button></p></div>
+ <div class="card w rules"><h2>How this dashboard works</h2><div class="rc">
+<div><h3>Files and linking</h3><ul>
+<li>Upload up to six CSV files. Each one is recognised by its columns and the separator is detected automatically: outlets (Identificativo), users (IDoperator), vouchers (Codice), recommendations (Sender account), nutrition plans (Proposal account) and customers (Registration date).</li>
+<li>Vouchers are linked to outlets by ID only (Used in ID = outlet ID). Outlet names are never used for this, because several outlets share the same name.</li>
+<li>A recommendation is tied to the outlet that created it by internal customer ID first, then by outlet name (using the category to choose between outlets with the same name). If it still can’t be tied, it is labelled by category only, for example Store (unlinked).</li></ul></div>
+<div><h3>Outlet types</h3><ul>
+<li>The outlets file lists every outlet. The type (Store, Vet, Breeder or Groomer) comes from its Category.</li>
+<li><b>GC</b> is a store that has a privacy acceptance date in the users file. Every other store is shown as <b>Store</b>, including stores that are missing from the users file.</li>
+<li>Vets, breeders and groomers are never GC, even if they have a privacy acceptance date.</li>
+<li>Test accounts (Managed by or Added by containing “test” or “SD Dev”) are hidden unless you tick Include test accounts.</li></ul></div>
+<div><h3>Vouchers and NCs</h3><ul>
+<li><b>Proposal</b> vouchers are created by an NC. <b>Prescription</b> vouchers are created by a GC, vet, groomer or breeder. A small third type, voucher discount, is shown separately.</li>
+<li>A voucher counts at the outlet where it was validated (Used in ID), on its validation date (Used at). It also carries the voucher amount. Vouchers whose outlet ID is not in the outlets file are left out.</li>
+<li>The NC is the proposer on the voucher. Farmina Pet Foods and Farmina Genius AI count as NCs.</li>
+<li>The Products tab uses the proposal and prescription voucher files. A purchase is a voucher that was used, with its product line, product, bag size and discount. A proposal voucher shows its product from the moment it is created, so created and used can be compared. A prescription voucher shows its product only once it is used. The table of plans and recommendations comes from the plans and recommendations exports. The date bar applies to the validation date for purchases and the creation date for created vouchers, plans and recommendations.</li>
+<li>The proposal voucher file and the prescription voucher file list every voucher created, whether used or not. A single nutrition plan can create several voucher codes, so a plan is linked to all of its vouchers by its Proposal ID. A prescription voucher is linked to its recommendation by the second it was created (and the customer’s phone, when the voucher shows one).</li>
+<li>When these files are loaded, a plan or recommendation counts as <b>validated</b> if any of its vouchers is used. Deleted vouchers are ignored. Without them, the export’s own status is used. The Amount column shows the amount used out of the amount issued. An unused prescription voucher shows the range of discounts it offers.</li>
+<li>In the Outlets tab, the NC column beside an outlet shows which NCs’ proposals were validated there. It does not mean the NC is assigned to the outlet.</li></ul></div>
+<div><h3>Who counts as one customer</h3><ul>
+<li>A customer is identified by phone number (last 10 digits). An email is used only when it belongs to a single phone number, or when a record has no phone. An email that appears with two or more different phone numbers (for example a store entering its own email so it receives OTPs faster) is ignored for matching, so those customers stay separate.</li>
+<li>Every nutrition plan and every recommendation or prescription is one event. Deleted plans and cancelled recommendations are ignored. Events with no usable phone or email can’t be matched to a person and are skipped.</li>
+<li>A voucher is <b>validated</b> when a recommendation’s store voucher is used, or a nutrition plan is confirmed.</li></ul></div>
+<div><h3>Unique, new, follow-up and returning</h3><ul>
+<li><b>Unique (counted):</b> a customer’s first-ever plan or recommendation that was created <b>and validated</b> (<b>New</b>), or a validated one made 12 or more months after their previous validated one (<b>Re-counted</b>). A plan or recommendation the customer never validated is not counted.</li>
+<li><b>Follow-up:</b> any later validated plan or recommendation within 12 months of the previous validated one. It is a return visit and adds nothing to unique customers. The 12 months are measured from the previous validated purchase.</li>
+<li><b>Returning customer:</b> a person who came again, meaning they have at least one follow-up or re-counted event.</li>
+<li>The unique credit goes to whoever made that plan or recommendation, the NC or the outlet. It does not go to the outlet where the voucher was validated.</li>
+<li>Validated events are ordered by exact creation date and time, so if one customer gets a recommendation and a plan on the same day, whoever created theirs first gets the unique credit.</li>
+<li><b>Not validated:</b> created, but the coupon was never validated. These are not counted as customers anywhere. In the NC summary, NP created = plans made, NP validated = plans whose coupon was validated, and NP validated minus Unique = follow-ups.</li>
+<li>Your files cover only the dates you upload. Without earlier history, a customer marked New is new only within this data.</li></ul></div>
+<div><h3>Dates and filters</h3><ul>
+<li>The date bar filters vouchers by validation date, and recommendations and plans by creation date. Outlet counts are not affected, because the outlets file has no date.</li>
+<li>Uniqueness is worked out from each customer’s full history first, and the dates are applied afterwards. A customer who first bought last year and buys again this month shows as a follow-up this month.</li>
+<li>The dropdowns at the top of the Customers tab (source, NC, outlet, state, city, counted as) apply to the cards, charts and customer list on that tab. The tables by source, NC and top outlets always show created and validated side by side, and the NC summary has its own month picker. Customers are counted only if they validated; choose Not validated under Counted as to see the rest. State and city are the customer’s own for nutrition plans, and the creating outlet’s for recommendations.</li>
+<li>Group by changes the time charts to day, week, month or year. The NC summary has its own month picker.</li>
+<li>Look up many customers at once (Customers tab) takes a pasted list of phone numbers or emails, shows each match with its voucher counts, and saves an Excel report with every customer’s full history.</li>
+<li>Clicking a customer’s name in the Customers list shows all their plans, recommendations and validated vouchers.</li>
+<li>Clicking a row in the NC, source or top-outlets tables, a Unique, NP created or NP validated number in the NC summary, or the Unique customers number in the Outlets tab, lists the customers behind that number.</li></ul></div>
+<div><h3>How data is cleaned</h3><ul>
+<li>States are standardised by spelling, known short forms, close matches, or by using the state most outlets in the same city have. Anything left over shows as Unknown.</li>
+<li>City names are merged and tidied, for example Bengaluru and Bangalore.</li>
+<li>Coordinates with letters or degree format are converted. Missing or invalid ones are estimated from other outlets in the same city and drawn faintly on the map.</li>
+<li>If an outlet has no displayed name, its company or contact name is shown instead.</li></ul></div>
+<div><h3>Saving and privacy</h3><ul>
+<li>A team copy of this dashboard opens with a password and is view only. It shows data that the owner exported. The data file is encrypted in the owner’s browser with that password before it is shared, and the password is never stored, so it cannot be recovered: if it is lost, export again with a new one.</li>
+<li>Your files are kept in this browser only and reload when you reopen the page. They are not sent to any server.</li>
+<li>Use the ✕ beside a saved file, or Delete all, to remove it. By default a new file is added to the saved data: records with the same ID are updated and older records are kept (matched by outlet ID, user ID, voucher code, plan or recommendation ID, or email and phone for customers). Choose Replace saved data next to the upload button to overwrite instead. Save backup downloads everything to a file you can keep, and Restore backup loads it again, so the data survives even if you clear your browser data or move to another computer.</li>
+<li>Download Excel (on the Outlets tab and the Customers tab) saves a workbook of what you are currently looking at, with your filters and dates applied. It includes every row, not only the rows shown on screen. If you open the dashboard as a saved file on your computer, the file downloads through your browser as usual.</li>
+<li>Voucher codes and amounts shown next to a plan or recommendation come from the voucher file, matched by the same customer and the same creation time. The voucher file lists validated vouchers only, so a plan that was never validated shows no code.</li>
+<li>Clearing your browser data also removes the saved files, and they won’t appear on another device.</li></ul></div>
+</div>
+<details><summary class="st" style="cursor:pointer">Data checks for this upload</summary><ul class="dq" id="dq"></ul></details></div>
+</div></div>
+<div id="cv" hidden>
+ <div class="bar"><div class="chips" id="c-src"></div></div>
+ <p class="st" id="cwarn"></p><div class="kpis" id="ck"></div>
+ <div class="grid">
+  <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">NC summary</h2><label class="st">Month <select id="ncm" aria-label="Month"></select></label></div><div class="tw"><table id="tn"></table></div><div id="ncd"></div><p class="st">Unique: customers whose first validated plan (or first validated plan after 12 months) was made by the NC. NP created: plans made. NP validated: plans whose coupon was validated, which is Unique plus follow-ups. This section has its own month picker.</p></div>
+  <div class="card"><h2>Unique customers over time</h2><div class="ch"><canvas id="h1"></canvas></div></div>
+  <div class="card"><h2>Vouchers validated vs not, by source</h2><div class="ch"><canvas id="h2"></canvas></div></div>
+  <div class="card w"><h2>By source (who created the recommendation or plan)</h2><div class="tw"><table id="t1"></table></div></div>
+  <div class="card w"><h2>By NC</h2><div class="tw"><table id="t2"></table></div></div>
+  <div class="card w"><h2>Top outlets by unique customers (credited to the outlet that made the first recommendation)</h2><div class="tw"><table id="t3"></table></div></div>
+  <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">Customers</h2><span id="cdt" class="pill" hidden style="cursor:pointer"></span><input id="cq" placeholder="Search name or phone" aria-label="Search customers"><select id="csort" aria-label="Sort customers"><option value="n">Most recs first</option><option value="new">Newest first</option><option value="old">Oldest first</option></select><select id="ctype" aria-label="Customer type"><option value="">All types</option><option>New</option><option>Returning</option></select><span class="st" id="ccnt"></span></div><details id="bulk" style="margin:0 0 10px"><summary class="st" style="cursor:pointer">Look up many customers at once</summary><p class="st" style="margin:6px 0">Paste phone numbers or emails, one per line or separated by commas. You get each customer’s full history, whatever filters and dates are selected.</p><textarea id="bk" rows="4" style="width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px" aria-label="Phone numbers or emails" placeholder="+919820418225&#10;9870799034"></textarea><div class="bar" style="margin:6px 0"><button class="pri" id="bkgo">Look up</button><button class="pri" id="bkxl">Download Excel</button><button id="bkclr">Clear</button><span class="st" id="bkmsg"></span></div><div class="tw"><table id="bkt"></table></div></details>
+<div id="cdet"></div><div class="tw"><table id="t4"></table></div></div>
+ </div></div>
+<div id="pv" hidden>
+ <div class="bar" id="pf"></div><div class="kpis" id="pk"></div>
+ <div class="grid">
+  <div class="card"><h2>Purchases by product line</h2><div class="ch"><canvas id="p1"></canvas></div></div>
+  <div class="card"><h2>Proposal vouchers created vs used, by product line</h2><div class="ch"><canvas id="p2"></canvas></div></div>
+  <div class="card"><h2>Purchases by species</h2><div class="ch"><canvas id="p3"></canvas></div></div>
+  <div class="card"><h2>Purchases by bag size</h2><div class="ch"><canvas id="p4"></canvas></div></div>
+  <div class="card"><h2>Top 10 products purchased</h2><div class="ch"><canvas id="p5"></canvas></div></div>
+  <div class="card"><h2>Purchases over time</h2><div class="ch"><canvas id="p6"></canvas></div></div>
+  <div class="card w"><h2>By product line</h2><div class="tw"><table id="tp1"></table></div></div>
+  <div class="card w"><h2>By product (top 100)</h2><div class="tw"><table id="tp2"></table></div></div>
+  <div class="card w"><h2>What NCs plan and what stores and vets recommend</h2><div class="tw"><table id="tp3"></table></div></div>
+ </div></div>
+<div id="empty">Nothing loaded yet.</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const TEAM=true;
+const $=s=>document.querySelector(s),g=(r,k)=>String(r[k]??'').trim(),nf=n=>Math.round(n).toLocaleString('en-IN');
+const k=s=>String(s||'').toLowerCase().replace(/[^a-z]/g,''),ti=s=>String(s||'').replace(/[^a-zA-Z ]/g,' ').replace(/\s+/g,' ').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+const catOf=s=>{s=String(s).toLowerCase();return s.includes('store')?'Store':s.includes('vet')?'Vet':s.includes('breed')?'Breeder':s.includes('groom')?'Groomer':null};
+const ST=['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Chandigarh','Jammu and Kashmir','Ladakh','Puducherry','Andaman and Nicobar','Lakshadweep'];
+const SK=Object.fromEntries(ST.map(s=>[k(s),s]));
+const AL={tn:'Tamil Nadu',tamilnadu:'Tamil Nadu',up:'Uttar Pradesh',mp:'Madhya Pradesh',orissa:'Odisha',newdelhi:'Delhi',delhincr:'Delhi',ncr:'Delhi',jammu:'Jammu and Kashmir',kashmir:'Jammu and Kashmir',jammukashmir:'Jammu and Kashmir',pondicherry:'Puducherry',uttrakhand:'Uttarakhand',chattisgarh:'Chhattisgarh',chhatisgarh:'Chhattisgarh',chattishgarh:'Chhattisgarh',telanagana:'Telangana',andhrapradesh:'Andhra Pradesh'};
+const CA={bengaluru:'Bangalore',gurugram:'Gurgaon',newdelhi:'Delhi',bombay:'Mumbai',calcutta:'Kolkata',poona:'Pune',bhubaneshwar:'Bhubaneswar'};
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]==b[j-1]?0:1));return d[a.length][b.length]}
+function cleanState(raw){const x=k(raw);if(!x)return null;if(SK[x])return SK[x];if(AL[x])return AL[x];
+ for(const q in SK)if(q.length>5&&x.includes(q))return SK[q];
+ let best=null,bd=9;for(const q in SK){const d=lev(x,q);if(d<bd&&d<=Math.max(1,Math.floor(q.length/4))){bd=d;best=SK[q]}}return best}
+function coord(s){s=String(s||'').trim();if(!s)return NaN;
+ if(/[°'′]/.test(s)){const m=s.match(/(\d+(?:\.\d+)?)\D+(\d+(?:\.\d+)?)\D+(\d+(?:\.\d+)?)\D*([NSEW])?/i);if(m){const v=+m[1]+m[2]/60+m[3]/3600;return /[SW]/i.test(m[4]||'')?-v:v}}
+ const n=parseFloat(s.replace(/[^0-9.\-]/g,''));return /[SW]\s*$/i.test(s)?-n:n}
+const okLat=v=>v>=6&&v<=38,okLon=v=>v>=68&&v<=98;
+const CC={GC:'#0f766e',Store:'#2563eb',Vet:'#c2410c',Breeder:'#6d28d9',Groomer:'#be185d'},GCC={'GC':'#0f766e','Non-GC':'#d97706','Unknown':'#94a3b8','N/A':'#64748b'},VTC={Prescription:'#0f766e',Proposal:'#d97706',Discount:'#6d28d9'};
+const raw={},DQ=[];let D={outlets:[],vouchers:[]},F={cat:'All',gc:'All',vt:'All',state:'All',city:'All',nc:'All',d0:'',d1:'',yr:'',mo:'',g:'auto',cso:'n',nm:'',test:false,q:'',n:50},CH={};
+
+async function load(files){if(TEAM)return;LM=[];
+ for(const f of files){const txt=await f.text();const rows=await new Promise(r=>Papa.parse(f,{header:true,skipEmptyLines:true,delimitersToGuess:[';',',','\t'],transformHeader:h=>h.replace(/^\uFEFF/,'').trim().toLowerCase(),complete:x=>r(x.data)}));
+  const h=rows[0]||{};const kind=kindOf(h);if(kind)put(kind,rows,f.name);}
+ const L=[['outlets','Outlets'],['users','Users'],['vouchers','Vouchers'],['rx','Recommendations'],['np','Plans'],['pv','Proposal vouchers'],['rv','Prescription vouchers'],['cust','Customers']];
+ $('#fs').innerHTML=L.map(([a,b])=>raw[a]?`<b>${b} ✓ ${nf(raw[a].length)}</b>`:`${b} missing`).join(' · ');savedUI();$('#xmsg').textContent=LM.join(' · ');
+ build();
+}
+function build(){
+ const R=raw.outlets;if(!R)return;DQ.length=0;
+ const U=new Map();(raw.users||[]).forEach(r=>{const id=g(r,'idoperator');if(id)U.set(id,{gc:!!g(r,'privacy acceptance date'),test:/test|sd dev/i.test(g(r,'managed by')+' '+g(r,'added by'))})});
+ const rows=R.map(r=>({id:g(r,'identificativo'),cat:catOf(g(r,'category'))||'Store',rs:g(r,'state/province'),rc:g(r,'city'),r})).filter(o=>o.id);
+ const cv={},DN={};
+ rows.forEach(o=>{const a=CA[k(o.rc)];o.ck=a?k(a):k(o.rc);o.city=DN[o.ck]??=(a||ti(o.rc)||'Unknown');o.s=cleanState(o.rs);if(o.s){const m=cv[o.ck]??={};m[o.s]=(m[o.s]||0)+1}});
+ const top=m=>m?Object.entries(m).sort((a,b)=>b[1]-a[1])[0][0]:null;
+ let sFix=0,sUnk=0,cFix=0,cRep=0,cEst=0,cBad=0,noName=0,noUser=0;const cm={};
+ rows.forEach(o=>{o.state=o.s||top(cv[o.ck])||top(cv[k(o.rs)])||'Unknown';if(o.state==='Unknown')sUnk++;if(o.state!==o.rs)sFix++;if(o.city!==o.rc.trim())cFix++;
+  const la=coord(g(o.r,'latitude')),lo=coord(g(o.r,'longitude'));o.la=la;o.lo=lo;o.ok=okLat(la)&&okLon(lo);
+  if(o.ok){if(isNaN(+g(o.r,'latitude'))||isNaN(+g(o.r,'longitude')))cRep++;(cm[o.ck]??=[]).push([la,lo])}});
+ rows.forEach(o=>{if(!o.ok){const c=cm[o.ck];if(c){o.la=c.reduce((s,x)=>s+x[0],0)/c.length;o.lo=c.reduce((s,x)=>s+x[1],0)/c.length;o.ok=true;o.est=true;cEst++}else cBad++}
+  o.name=g(o.r,'displayed name')||g(o.r,'company')||g(o.r,'contact')||'(no name)';if(!g(o.r,'displayed name'))noName++;
+  const u=U.get(o.id);o.test=!!u?.test;o.base=o.cat;if(o.cat==='Store'&&u&&u.gc)o.cat='GC';if(o.cat==='Store'&&!u)noUser++;o.gc=o.cat;o.active=1});
+ const byId=new Map(rows.map(o=>[o.id,o]));
+ const nm={};rows.forEach(o=>{const x=o.name.toLowerCase();(nm[x]??=new Set()).add(o.id)});
+ const dupN=Object.values(nm).filter(s=>s.size>1).length;
+ const V=(raw.vouchers||[]).map(r=>{const t=g(r,'type').toLowerCase();return{code:g(r,'codice'),oid:g(r,'used in id'),t:t.includes('proposal')?'Proposal':t.includes('prescription')?'Prescription':'Discount',amt:parseFloat(g(r,'amount'))||0,m:g(r,'used at').slice(0,7),d:g(r,'used at').slice(0,10),ts:g(r,'date'),nc:g(r,'proposers')||'Unassigned',prod:g(r,'promo'),cu:g(r,'customer'),ph:g(r,'customer phone'),em:g(r,'customer email'),ck:(g(r,'customer phone').replace(/\D/g,'').slice(-10)||g(r,'customer email').toLowerCase()||g(r,'customer').toLowerCase())}});
+ const orphan=V.filter(v=>!byId.has(v.oid)).length;
+ D={outlets:rows,allV:V,vouchers:V.filter(v=>byId.has(v.oid)),byId};
+ const stUnk=noUser;
+ DQ.push(`${nf(sFix)} state values standardised (spelling, case, or taken from the outlet's city); ${sUnk} could not be resolved and show as Unknown`,
+  `${nf(cFix)} city names standardised (for example Bengaluru and Bangalore merged)`,
+  `${cRep} coordinates repaired (letters or degree format), ${cEst} estimated from other outlets in the same city, ${cBad} unusable`,
+  `${nf(noName)} outlets have no displayed name, so company or contact name is shown`,
+  `${dupN} outlet names are shared by more than one ID; linking uses the ID only`,
+  raw.users?`${nf(stUnk)} stores have no row in the users file and are labelled Store, not GC`:'Users file not loaded: no outlet can be labelled GC yet',
+  raw.vouchers?`${orphan} vouchers point to an outlet ID missing from the outlets file and are left out`:'Vouchers file not loaded',
+  `${rows.filter(o=>o.test).length} test accounts are hidden unless you tick Include test accounts`);
+ buildC();fill();render();
+}
+function chips(id,label,opts,key){const el=$('#'+id);el.innerHTML=`<span>${label}</span><select aria-label="${label}">${['All',...opts].map(o=>`<option${F[key]===o?' selected':''}>${xs(o)}</option>`).join('')}</select>`;el.querySelector('select').onchange=e=>{F[key]=e.target.value;F.n=50;render()}}
+function fill(){$('#empty').hidden=true;initDate();showTab(TAB);
+ chips('c-cat','Type',['GC','Store','Vet','Breeder','Groomer'],'cat');chips('c-vt','Voucher',['Prescription','Proposal','Discount'],'vt');chips('c-nc','NC',[...new Set(D.vouchers.filter(v=>v.t=='Proposal').map(v=>v.nc))].sort(),'nc');
+ const S=[...new Set(D.outlets.map(o=>o.state))].sort();$('#s-state').innerHTML='<option value="All">All states</option>'+S.map(s=>`<option>${s}</option>`).join('');cities()}
+function cities(){const C=[...new Set(D.outlets.filter(o=>F.state=='All'||o.state==F.state).map(o=>o.city))].sort();$('#s-city').innerHTML='<option value="All">All cities</option>'+C.map(s=>`<option>${s}</option>`).join('');F.city='All'}
+function mk(id,type,data,opt={}){CH[id]?.destroy();const sc=getComputedStyle(document.documentElement);Chart.defaults.color=sc.getPropertyValue('--mute').trim()||'#667';Chart.defaults.borderColor=sc.getPropertyValue('--line').trim()||'#ddd';
+ CH[id]=new Chart($('#'+id),{type,data,options:{maintainAspectRatio:false,plugins:{legend:{display:data.datasets.length>1||type=='doughnut',position:'bottom',labels:{boxWidth:10}}},...opt}})}
+const stk=(h)=>({indexAxis:h?'y':'x',scales:{x:{stacked:true},y:{stacked:true}}});
+function render(){
+ const O=D.outlets.filter(o=>(F.test||!o.test)&&(F.cat=='All'||o.cat==F.cat)&&(F.gc=='All'||o.gc==F.gc)&&(F.state=='All'||o.state==F.state)&&(F.city=='All'||o.city==F.city));
+ O.forEach(o=>o.a={v:0,pr:0,pp:0,amt:0,nc:{}});D.outlets.forEach(o=>o.uc=0);C.ev.forEach(e=>{if(e.o&&isU(e)&&inP(e.d))e.o.uc++});const set=new Set(O.map(o=>o.id)),VV=[];
+ const VN=[];D.vouchers.forEach(v=>{if(!set.has(v.oid)||!inP(v.d)||(F.vt!='All'&&v.t!=F.vt))return;const o=D.byId.get(v.oid);if(v.t=='Proposal'){v.o=o;VN.push(v)}if(F.nc!='All'&&(v.t!='Proposal'||v.nc!=F.nc))return;if(v.t=='Proposal')o.a.nc[v.nc]=(o.a.nc[v.nc]||0)+1;o.a.v++;o.a.amt+=v.amt;if(v.t=='Prescription')o.a.pr++;if(v.t=='Proposal')o.a.pp++;v.o=o;VV.push(v)});
+ const cnt=(arr,f)=>arr.reduce((m,x)=>{const q=f(x);m[q]=(m[q]||0)+1;return m},{});
+ const stores=O.filter(o=>o.cat=='Store'||o.cat=='GC'),gcs=cnt(stores,o=>o.cat),tot=VV.reduce((s,v)=>s+v.amt,0);
+ const atStore=VV.filter(v=>v.o.cat=='Store'||v.o.cat=='GC'),atGC=atStore.filter(v=>v.o.cat=='GC').length;
+ $('#kpis').innerHTML=`<div class="card kpi"><div class="n">${nf(F.nc=='All'?O.length:O.filter(o=>o.a.v>0).length)}</div><div class="l">Outlets in view</div></div>
+ <div class="card kpi"><div class="l">Stores: ${nf(stores.length)}</div><div class="split"><span><b style="color:#0f766e">${nf(gcs.GC||0)}</b>GC</span><span><b style="color:#2563eb">${nf(gcs.Store||0)}</b>Other stores</span></div></div>
+ <div class="card kpi"><div class="n">${nf(VV.length)}</div><div class="l">Vouchers validated</div></div>
+ <div class="card kpi"><div class="n">₹${nf(tot)}</div><div class="l">Voucher value</div></div><div class="card kpi"><div class="n">${nf(new Set(VV.map(v=>v.ck||v.code)).size)}</div><div class="l">Unique customers</div></div>
+ <div class="card kpi"><div class="n">${atStore.length?Math.round(atGC/atStore.length*100)+'%':'–'}</div><div class="l">Of store vouchers validated at GC stores</div></div>`;
+ const cc=cnt(O,o=>o.cat);mk('g1','doughnut',{labels:Object.keys(cc),datasets:[{data:Object.values(cc),backgroundColor:Object.keys(cc).map(x=>CC[x])}]});
+ const sc=cnt(stores,o=>o.state),ts=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,10).map(x=>x[0]);
+ mk('g2','bar',{labels:ts,datasets:['GC','Store'].map(s=>({label:s,backgroundColor:CC[s],data:ts.map(t=>stores.filter(o=>o.state==t&&o.cat==s).length)}))},stk(1));
+ const B=['GC','Store','Vet','Breeder','Groomer'],bk=o=>o.cat;
+ mk('g3','bar',{labels:B,datasets:['Prescription','Proposal','Discount'].map(t=>({label:t,backgroundColor:VTC[t],data:B.map(b=>VV.filter(v=>v.t==t&&bk(v.o)==b).length)}))},stk());
+ const M=[...new Set(VV.map(v=>gb(v.d)).filter(Boolean))].sort();
+ mk('g4','bar',{labels:M,datasets:['Prescription','Proposal','Discount'].map(t=>({label:t,backgroundColor:VTC[t],data:M.map(m=>VV.filter(v=>v.t==t&&gb(v.d)==m).length)}))},stk());
+ const P=VV.filter(v=>v.t=='Proposal'),NC=Object.entries(cnt(P,v=>v.nc)).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+ const nb=['GC','Store','Other outlet'],nbk=o=>o.cat=='GC'||o.cat=='Store'?o.cat:'Other outlet',nbc=['#0f766e','#2563eb','#64748b'];
+ mk('g5','bar',{labels:NC,datasets:nb.map((b,i)=>({label:b,backgroundColor:nbc[i],data:NC.map(n=>P.filter(v=>v.nc==n&&nbk(v.o)==b).length)}))},stk(1));
+ drawMap(O);
+ const ncm={};VN.forEach(v=>{const x=ncm[v.nc]??={nc:v.nc,n:0,amt:0,cu:new Set(),o:new Set(),gc:0,st:0,ot:0};x.n++;x.amt+=v.amt;x.cu.add(v.ck||v.code);x.o.add(v.oid);if(v.o.cat=='GC')x.gc++;else if(v.o.cat=='Store')x.st++;else x.ot++});
+ const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+ $('#nct').innerHTML=Object.values(ncm).sort((a,b)=>b.n-a.n).map(x=>`<tr data-nc="${esc(x.nc)}" style="cursor:pointer;${F.nc==x.nc?'font-weight:600;background:var(--bg)':''}"><td>${esc(x.nc)}</td><td class="r">${nf(x.n)}</td><td class="r">${nf(x.cu.size)}</td><td class="r">${x.o.size}</td><td class="r">${x.gc}</td><td class="r">${x.st}</td><td class="r">${x.ot}</td><td class="r">₹${nf(x.amt)}</td></tr>`).join('')||'<tr><td colspan="8">No NC proposals in this view</td></tr>';
+ if(F.nc=='All')$('#cust').innerHTML='';else{const cm={};VV.forEach(v=>{const key=v.ck||v.code,c=cm[key]??={n:v.cu||'(no name)',ph:v.ph,v:0,amt:0,o:new Set()};c.v++;c.amt+=v.amt;c.o.add(v.o.name)});const L=Object.values(cm).sort((a,b)=>b.v-a.v);
+  $('#cust').innerHTML=`<h2 style="margin-top:14px">Customers of ${esc(F.nc)}: ${nf(L.length)} unique <button id="clr">Show all NCs</button></h2><div class="tw"><table><thead><tr><th>Customer</th><th>Phone</th><th>Validated at</th><th class="r">Vouchers</th><th class="r">Amount</th></tr></thead><tbody>${L.slice(0,100).map(c=>`<tr><td>${esc(c.n)}</td><td>${esc(c.ph||'–')}</td><td>${esc([...c.o].join(', '))}</td><td class="r">${c.v}</td><td class="r">₹${nf(c.amt)}</td></tr>`).join('')}</tbody></table></div>${L.length>100?'<p class="st">Showing the top 100 customers.</p>':''}`;$('#clr').onclick=()=>{F.nc='All';render()}}
+ const q=F.q.toLowerCase(),T=O.filter(o=>(!q||(o.name+' '+o.city).toLowerCase().includes(q))&&(F.nc=='All'||o.a.v>0)).sort((a,b)=>b.a.v-a.a.v);
+ {const sn=document.querySelector('#c-nc select');if(sn)sn.value=F.nc}XO=T;$('#cnt').textContent=`${nf(T.length)} outlets`;
+ $('#tb').innerHTML=T.slice(0,F.n).map(o=>`<tr><td>${o.name.replace(/</g,'&lt;')}</td><td><span class="pill" style="border-color:${CC[o.cat]}">${o.cat}</span></td><td>${o.city}</td><td>${o.state}</td><td class="r" data-o="${o.id}" style="cursor:pointer;text-decoration:underline">${o.uc||0}</td><td class="r">${o.a.v}</td><td class="r">${o.a.pr}</td><td class="r">${o.a.pp}</td><td>${Object.entries(o.a.nc).sort((a,b)=>b[1]-a[1]).map(([n,c])=>n.replace(/</g,'&lt;')+' ('+c+')').join(', ')||'–'}</td><td class="r">₹${nf(o.a.amt)}</td></tr>`).join('');
+ $('#more').hidden=T.length<=F.n;
+ $('#dq').innerHTML=DQ.map(x=>`<li>${x}</li>`).join('');
+}
+function drawMap(O){const c=$('#map'),w=c.parentElement.clientWidth,h=c.parentElement.clientHeight;c.width=w;c.height=h;const x=c.getContext('2d');
+ const lo0=68,lo1=98,la0=6,la1=38,s=Math.min(w/(lo1-lo0),h/(la1-la0)),ox=(w-s*(lo1-lo0))/2,oy=(h-s*(la1-la0))/2;
+ O.forEach(o=>{if(!o.ok)return;x.globalAlpha=o.est?.35:.75;x.fillStyle=CC[o.cat];x.beginPath();x.arc(ox+(o.lo-lo0)*s,h-oy-(o.la-la0)*s,2.6,0,7);x.fill()});
+ $('#leg').innerHTML=Object.entries(CC).map(([a,b])=>`<span><i style="background:${b}"></i>${a}</span>`).join('')}
+const xs=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'),P10=s=>String(s||'').replace(/\D/g,'').slice(-10),E1=s=>String(s||'').trim().toLowerCase(),SC=s=>CC[s.replace(' (unlinked)','')]||(s=='NC plan'?'#d97706':'#94a3b8');
+let C={ev:[]},TAB='o',CS='All',CQ='',CD=null;
+function showTab(t){TAB=t;$('#tabs').innerHTML=[['Outlets','o'],['Customers','c'],['Products','p']].map(([a,b])=>`<button class="${b==t?'on':''}" data-t="${b}">${a}</button>`).join('');$('#app').hidden=t!='o';$('#cv').hidden=t!='c';$('#pv').hidden=t!='p';if(t=='c')renderC();else if(t=='p')renderP();else if(D.outlets.length)render()}
+function buildC(){
+ const par={},f=x=>par[x]===undefined?(par[x]=x):par[x]===x?x:(par[x]=f(par[x])),un=(a,b)=>{a=f(a);b=f(b);if(a!=b)par[a]=b};
+ const ep={},addEp=(ph,em)=>{const p=P10(ph),e=E1(em);if(p.length==10&&e.includes('@'))(ep[e]??=new Set()).add(p)};
+ (raw.rx||[]).forEach(r=>addEp(g(r,'phone number'),g(r,'email')));(raw.np||[]).forEach(r=>addEp(g(r,'phone number'),g(r,'email')));(raw.cust||[]).forEach(r=>addEp(g(r,'phone number'),g(r,'email')));(D.allV||D.vouchers).forEach(v=>addEp(v.ph,v.em));
+ const sh=new Set(Object.keys(ep).filter(e=>ep[e].size>=2)),nk=n=>String(n||'').toLowerCase().split(/\s+/).filter(Boolean).sort().join(' ');
+ const ks=(ph,em,nm)=>{const a=[],p=P10(ph),e=E1(em);if(p.length==10)a.push('p'+p);if(e.includes('@')){if(!sh.has(e))a.push('e'+e);else if(p.length!=10)a.push('e'+e+'|'+nk(nm))}a.forEach(x=>f(x));if(a.length>1)un(a[0],a[1]);return a[0]};
+ const nmx=new Map(),icx=new Map();
+ D.outlets.forEach(o=>[g(o.r,'displayed name'),g(o.r,'company'),g(o.r,'contact')].forEach(n=>{n=n.toLowerCase();if(n){const l=nmx.get(n)||[];if(!l.includes(o))l.push(o);nmx.set(n,l)}}));
+ (raw.users||[]).forEach(r=>{const i=g(r,'internal customer id'),o=D.byId.get(g(r,'idoperator'));if(i&&o)icx.set(i,o)});
+ const link=(r,cat)=>{const o=icx.get(g(r,'internal customer id'));if(o)return o;const c=nmx.get(g(r,'sender account').toLowerCase())||[],m=c.filter(x=>x.base==cat);return m.length==1?m[0]:c.length==1?c[0]:null};
+ const ev=[];
+ (raw.rx||[]).forEach(r=>{if(g(r,'proposal status').toLowerCase()=='annullato')return;const k=ks(g(r,'phone number'),g(r,'email'),g(r,'name')+' '+g(r,'lastname'));if(!k)return;const cat=catOf(g(r,'category')),o=link(r,cat);
+  ev.push({k,d:g(r,'date').slice(0,10),t:g(r,'date'),pl:g(r,'product line'),pr:g(r,'product'),st:o?o.state:'Unknown',ct:o?o.city:'Unknown',src:o?o.cat:cat?cat+(cat=='Store'?' (unlinked)':''):'Unknown',kind:/racc/i.test(g(r,'type'))?'Recommendation':'Prescription',ok:g(r,'store voucher')=='used',nm:(g(r,'name')+' '+g(r,'lastname')).trim(),ph:g(r,'phone number'),o})});
+ (raw.np||[]).forEach(r=>{if(g(r,'status').toLowerCase()=='deleted')return;const k=ks(g(r,'phone number'),g(r,'email'),g(r,'name')+' '+g(r,'lastname'));if(!k)return;
+  ev.push({k,id:g(r,'id'),d:g(r,'date').slice(0,10),t:g(r,'date'),pl:g(r,'product line').replace(/ Grain Free/i,'').replace('N&D Low Ancestral','N&D Ancestral').replace(/Canine$/,'canine'),pr:g(r,'product'),st:cleanState(g(r,'state/province'))||'Unknown',ct:ti(g(r,'city'))||'Unknown',src:'NC plan',nc:g(r,'proposal account')||'Unassigned',kind:'Nutrition plan',ok:g(r,'status').toLowerCase()=='confirmed',nm:(g(r,'name')+' '+g(r,'lastname')).trim(),ph:g(r,'phone number')})});
+ const vf=new Map((D.allV||[]).map(v=>[v.code,v])),outFor=(code,icid,nm)=>{const a=vf.get(code),o0=a&&D.byId.get(a.oid);if(o0)return o0;const o=icid&&icx.get(icid);if(o)return o;const c=nm&&nmx.get(nm.toLowerCase());return c&&c.length==1?c[0]:null};
+ const PV=(raw.pv||[]).map(r=>{const st=g(r,'state').toLowerCase();return{code:g(r,'code'),st,cr:g(r,'date'),ua:g(r,'used at'),pid:g(r,'proposal'),pl:g(r,'product line'),pr:g(r,'product'),bg:parseFloat(g(r,'bag'))||0,ncn:g(r,'proposal name')||g(r,'proposal account'),amt:parseFloat(g(r,'amount'))||0,nm:g(r,'used in contact'),o:st=='used'?outFor(g(r,'code'),g(r,'used in internal customer id'),g(r,'used in contact')):null}});
+ const RV=(raw.rv||[]).map(r=>{const st=g(r,'state').toLowerCase(),ds=Object.keys(r).filter(k=>/^discount\d+$/.test(k)).map(k=>parseFloat(r[k])).filter(x=>x>0),un=g(r,'used on').split(' - ')[0].trim();return{code:g(r,'code'),st,cr:g(r,'date'),ua:g(r,'uset at'),pl:g(r,'producr line purchased'),pr:g(r,'product purchased'),bg:parseFloat(g(r,'bag purchased'))||0,spp:g(r,'species purchased').toLowerCase(),amt:st=='used'?(parseFloat(g(r,'recognized discount'))||null):null,lo:ds.length?Math.min(...ds):null,hi:ds.length?Math.max(...ds):null,ph:g(r,'customer phone'),nm:un,o:st=='used'?outFor(g(r,'code'),g(r,'used on internal customer id'),un):null}});
+ const pd=[...PV.filter(v=>v.st!='deleted').map(v=>({...v,src:'Proposal',nc:v.ncn,sp:/feline/i.test(v.pl)?'cat':'dog'})),...RV.filter(v=>v.st=='used'&&v.pl).map(v=>({...v,src:'Prescription',nc:'',sp:v.spp||(/feline/i.test(v.pl)?'cat':'dog')}))];
+ const pb={},rb={};PV.forEach(v=>(pb[v.pid]??=[]).push(v));RV.forEach(v=>(rb[v.cr]??=[]).push(v));
+ let lp=0,lr=0;ev.forEach(e=>{if(e.kind=='Nutrition plan'){if(e.id&&pb[e.id]){e.vs=pb[e.id];lp++}}else{const c=(rb[e.t]||[]).filter(v=>!v.ev&&(!v.ph||P10(v.ph)==P10(e.ph)));if(c.length){c[0].ev=1;e.vs=[c[0]];lr++}}});
+ ev.forEach(e=>{if(e.vs){const a=e.vs.filter(v=>v.st!='deleted');if(a.length)e.ok=a.some(v=>v.st=='used')}});
+ if(PV.length||RV.length)DQ.push(`Voucher files: ${nf(PV.length)} proposal vouchers (${nf(lp)} plans linked by Proposal ID) and ${nf(RV.length)} prescription vouchers (${nf(lr)} recommendations linked by creation time). ${nf(PV.filter(v=>v.st=='used'&&!v.o).length+RV.filter(v=>v.st=='used'&&!v.o).length)} used vouchers could not be tied to a single outlet and show the outlet name from the file.`);
+ const reg=(raw.cust||[]).map(r=>ks(g(r,'phone number'),g(r,'email'),g(r,'name')+' '+g(r,'lastname'))).filter(Boolean);
+ (D.allV||D.vouchers).forEach(v=>{v.pk=ks(v.ph,v.em,v.cu)});
+ ev.forEach(e=>e.p=f(e.k));(D.allV||D.vouchers).forEach(v=>{v.p=v.pk?f(v.pk):null});const regP=new Set(reg.map(x=>f(x)));
+ const by={};ev.forEach(e=>(by[e.p]??=[]).push(e));
+ Object.values(by).forEach(a=>{a.sort((x,y)=>x.t<y.t?-1:x.t>y.t?1:0);let pv=null;a.forEach(e=>{if(!e.ok){e.u='Pending';return}e.u=!pv?'New':(new Date(e.d)-new Date(pv.d))/864e5>=365?'Returning':'Repeat';pv=e})});
+ const vb={},tm=s=>Date.parse(String(s).replace(' ','T'));(D.allV||D.vouchers).forEach(v=>{if(v.p&&v.ts&&v.t!='Discount')(vb[v.p]??=[]).push(v)});
+ Object.keys(vb).forEach(p=>{const evs=by[p]||[];vb[p].forEach(v=>{let b=null,bd=61e3;evs.forEach(e=>{if(e.code||(v.t=='Proposal')!=(e.kind=='Nutrition plan'))return;const d=Math.abs(tm(e.t)-tm(v.ts));if(d<bd){bd=d;b=e}});if(b){b.code=v.code;b.vamt=v.amt;b.vd=v.d}})});
+ const ds=ev.map(e=>e.d).sort(),span=ds.length?Math.round((new Date(ds[ds.length-1])-new Date(ds[0]))/864e5)+1:0;
+ const cmp={};Object.keys(par).forEach(x=>{const c=cmp[f(x)]??={p:0,e:0};x[0]=='p'?c.p++:c.e++});
+ C={ev,by,regP,pd,kmap:Object.fromEntries(Object.keys(par).map(x=>[x,f(x)])),span,min:ds[0],max:ds[ds.length-1],newP:new Set(ev.filter(e=>e.u=='New').map(e=>e.p))};
+ if(ev.length)DQ.push(`Customers: ${nf(Object.keys(by).length)} people identified from ${nf(ev.length)} recommendations and plans, matched by phone number, using an email only when it belongs to a single phone (deleted plans and cancelled recommendations left out)`,`${nf(sh.size)} emails are used with two or more different phone numbers (for example a store’s own email), so they are not used to match customers and the phone number decides. ${nf(Object.values(cmp).filter(c=>c.p>1).length)} customers still hold more than one phone number.`,`${nf(ev.filter(e=>e.kind!='Nutrition plan'&&!e.o).length)} recommendations could not be tied to an outlet ID and are labelled by category only`)}
+function renderC(){
+ if(!C.ev.length){$('#ck').innerHTML='<div class="card">Load the outlets, recommendations, nutrition plans and customers files to see customers.</div>';return}
+ const SRC=[...new Set(C.ev.map(e=>e.src))].sort();
+ const op=(a,s)=>a.map(x=>{const v=Array.isArray(x)?x[0]:x,l=Array.isArray(x)?x[1]:x;return`<option value="${xs(v)}"${v==s?' selected':''}>${xs(l)}</option>`}).join(''),sl=(k,lab,a,s)=>`<label class="st">${lab} <select data-k="${k}" aria-label="${lab}">${op([['All','All'],...a],s)}</select></label>`,uniq=f=>[...new Set(C.ev.map(f).filter(Boolean))].sort();
+ const OUT=[...new Map(C.ev.filter(e=>e.o).map(e=>[e.o.id,e.o])).values()].sort((a,b)=>a.name.localeCompare(b.name)).map(o=>[o.id,o.name+' ('+o.city+')']);
+ $('#c-src').innerHTML=sl('s','Source',SRC,CS)+sl('n','NC',uniq(e=>e.nc),CN)+sl('o','Outlet',OUT,CO)+sl('t','State',uniq(e=>e.st),CT)+sl('y','City',uniq(e=>(CT=='All'||e.st==CT)?e.ct:''),CY)+sl('u','Counted as',['New','Follow-up','Re-counted (12m+)','Not validated'],CU)+'<button id="cclr">Clear filters</button><button class="pri" id="xlc">Download Excel</button>';
+ const E0=C.ev.filter(e=>(CS=='All'||e.src==CS)&&(CN=='All'||e.nc==CN)&&(CO=='All'||(e.o&&e.o.id==CO))&&(CT=='All'||e.st==CT)&&(CY=='All'||e.ct==CY)&&inP(e.d)),E=E0.filter(e=>CU=='Not validated'?e.u=='Pending':e.u!='Pending'&&(CU=='All'||utag(e.u)==CU)),U=E.filter(isU),cn=u=>E.filter(e=>e.u==u).length;
+ $('#cwarn').textContent=C.span<365?`Your files cover ${C.span} days (${C.min} to ${C.max}). Customers marked New are new only within this data, because earlier history is not available to check. Load 12 months or more of exports to confirm who is truly first-time, and to detect customers who come back after 12 months.`:`History covers ${C.span} days.`;
+ const val=E0.filter(e=>e.ok).length,idle=[...C.regP].filter(p=>!C.by[p]).length;
+ $('#ck').innerHTML=[[nf(U.length),'Unique customers (counted)'],[nf(cn('New')),'New customers (first time)'],[nf(new Set(E.filter(e=>e.u=='Repeat'||e.u=='Returning').map(e=>e.p)).size),'Returning customers (came again)'],[nf(cn('Repeat')),'Follow-ups (return visits, not counted as unique)'],[nf(cn('Returning')),'Re-counted as unique after 12 months'],[E0.length?Math.round(val/E0.length*100)+'%':'\u2013','Created and validated'],[nf(E0.filter(e=>e.u=='Pending').length),'Created but not validated (not counted)'],[nf(idle),'Registered, no plan or recommendation yet']].map(([n,l])=>`<div class="card kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+ const NP=C.ev.filter(e=>e.nc),mons=[...new Set(NP.map(e=>e.d.slice(0,7)))].sort(),ncs=[...new Set([...(raw.np||[]).map(r=>g(r,'proposal account')),...NP.map(e=>e.nc)].filter(Boolean))];
+ if(!F.nm||(F.nm!='all'&&F.nm!='by'&&!mons.includes(F.nm)))F.nm=mons[mons.length-1]||'all';
+ $('#ncm').innerHTML=mons.slice().reverse().map(m=>`<option value="${m}">${MN[+m.slice(5)-1]} ${m.slice(0,4)}</option>`).join('')+'<option value="all">All time</option><option value="by">Month by month</option>';$('#ncm').value=F.nm;
+ const cell=L=>[L.filter(isU).length,L.length,L.filter(e=>e.u!='Pending').length];
+ const nr=ncs.map(n=>({n,L:NP.filter(e=>e.nc==n)})).sort((a,b)=>b.L.length-a.L.length);
+ if(F.nm=='by'){$('#tn').innerHTML=`<thead><tr><th>NC</th>${mons.map(m=>`<th class="r">${MN[+m.slice(5)-1].slice(0,3)} ${m.slice(0,4)}<br><span class="st">Unique / NP created / NP validated</span></th>`).join('')}<th class="r">Total<br><span class="st">Unique / NP created / NP validated</span></th></tr></thead><tbody>${nr.map(r=>`<tr><td>${xs(r.n)}</td>${mons.concat(['']).map(m=>`<td class="r">${cell(m?r.L.filter(e=>e.d.slice(0,7)==m):r.L).map((v,i)=>`<span data-nd="${['u','np','pv'][i]}|${m||'all'}|${xs(r.n)}" style="cursor:pointer;text-decoration:underline">${v}</span>`).join(' / ')}</td>`).join('')}</tr>`).join('')}</tbody>`}
+ else{const f=x=>F.nm=='all'?x:x.filter(e=>e.d.slice(0,7)==F.nm),rows=nr.map(r=>({n:r.n,c:cell(f(r.L))})).sort((a,b)=>b.c[1]-a.c[1]),T=[0,1,2].map(i=>rows.reduce((s,r)=>s+r.c[i],0));
+  $('#tn').innerHTML=`<thead><tr><th>NC</th><th class="r">Unique</th><th class="r">NP created</th><th class="r">NP validated</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${xs(r.n)}</td>${['u','np','pv'].map((s,i)=>`<td class="r" data-nd="${s}|${F.nm}|${xs(r.n)}" style="cursor:pointer;text-decoration:underline">${r.c[i]}</td>`).join('')}</tr>`).join('')}<tr style="font-weight:600"><td>Total</td>${T.map(t=>`<td class="r">${t}</td>`).join('')}</tr></tbody>`}
+ const SG={u:'Unique customers',np:'NP created',pv:'NP validated'},ML=m=>m=='all'?'All time':MN[+m.slice(5)-1]+' '+m.slice(0,4);
+ if(!ND)$('#ncd').innerHTML='';else{const L=NP.filter(e=>e.nc==ND.nc&&(ND.m=='all'||e.d.slice(0,7)==ND.m)&&(ND.s=='np'||(ND.s=='u'?isU(e):e.u!='Pending'))).sort((a,b)=>a.t<b.t?-1:1);
+  $('#ncd').innerHTML=`<h2 style="margin-top:14px">${xs(ND.nc)} · ${SG[ND.s]} · ${ML(ND.m)}: ${nf(L.length)}${ND.s!='u'?' plans from '+nf(new Set(L.map(e=>e.p)).size)+' customers':''} <button id="ncx">Close</button></h2><div class="tw"><table><thead><tr><th>Customer</th><th>Phone</th><th>Plan date</th><th>Counted as</th><th>Validated</th><th>Vouchers</th><th class="r">Amount</th><th class="r">Plans and recommendations in data</th></tr></thead><tbody>${L.slice(0,500).map(e=>`<tr><td>${xs(e.nm)}</td><td>${xs(e.ph)}</td><td>${e.t.slice(0,16)}</td><td>${utag(e.u)}</td><td>${e.ok?'Yes':'No'}</td><td>${vcol(e)[0]}</td><td class="r">${vcol(e)[1]}</td><td class="r">${C.by[e.p].length}</td></tr>`).join('')}</tbody></table></div>${L.length>500?'<p class="st">Showing the first 500.</p>':''}`;$('#ncx').onclick=()=>{ND=null;renderC()}}
+ const wk=d=>{const t=new Date(d);t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)},per=F.g=='auto'?(C.span>120?d=>d.slice(0,7):wk):gb;
+ const PR=[...new Set(U.map(e=>per(e.d)))].sort(),SL=[...new Set(U.map(e=>e.src))].sort();
+ mk('h1','bar',{labels:PR,datasets:SL.map(s=>({label:s,backgroundColor:SC(s),data:PR.map(p=>U.filter(e=>e.src==s&&per(e.d)==p).length)}))},stk());
+ const S2=[...new Set(E0.map(e=>e.src))].sort();
+ mk('h2','bar',{labels:S2,datasets:[['Validated',true,'#0f766e'],['Not validated',false,'#94a3b8']].map(([l,b,c])=>({label:l,backgroundColor:c,data:S2.map(s=>E0.filter(e=>e.src==s&&e.ok==b).length)}))},stk());
+ const grp=(L,key)=>{const m={};L.forEach(e=>{const x=m[key(e)]??={n:key(e),ev:0,nw:0,rt:0,rp:0,ok:0,p:new Set()};x.ev++;if(e.u=='Pending')return;x.p.add(e.p);e.u=='New'?x.nw++:e.u=='Returning'?x.rt++:x.rp++;x.ok++});return Object.values(m).sort((a,b)=>b.ev-a.ev)};
+ const gt=(el,L,key,lab,dt,ex)=>{$(el).innerHTML=`<thead><tr><th>${lab}</th><th class="r">Created</th><th class="r">Unique (counted)</th><th class="r">New</th><th class="r">Re-counted 12m+</th><th class="r">Follow-up</th><th class="r">People</th><th class="r">Validated</th>${ex?'<th>Validated at (customers)</th>':''}</tr></thead><tbody>${grp(L,key).map(x=>`<tr data-d="${dt}|${xs(x.n)}" style="cursor:pointer"><td>${xs(x.n)}</td><td class="r">${nf(x.ev)}</td><td class="r">${nf(x.nw+x.rt)}</td><td class="r">${nf(x.nw)}</td><td class="r">${nf(x.rt)}</td><td class="r">${nf(x.rp)}</td><td class="r">${nf(x.p.size)}</td><td class="r">${nf(x.ok)} (${Math.round(x.ok/x.ev*100)}%)</td>${ex?'<td>'+ex(x.n)+'</td>':''}</tr>`).join('')}</tbody>`};
+ const nco={};D.vouchers.forEach(v=>{if(v.t!='Proposal'||!v.p)return;const o=D.byId.get(v.oid),m=nco[v.nc]??={},x=m[o.id]??={n:o.name,p:new Set()};x.p.add(v.p)});
+ const exf=n=>{const a=Object.values(nco[n]||{}).sort((x,y)=>y.p.size-x.p.size);return xs(a.slice(0,6).map(x=>x.n+' ('+x.p.size+')').join(', ')+(a.length>6?' +'+(a.length-6)+' more':'')||'\u2013')};
+ gt('#t1',E0,e=>e.src,'Source','s');gt('#t2',E0.filter(e=>e.nc),e=>e.nc,'NC','n',exf);
+ const om={};E0.forEach(e=>{const o=e.o;if(!o)return;const x=om[o.id]??={o,ev:0,nw:0,rt:0,ok:0};x.ev++;if(e.u=='New')x.nw++;else if(e.u=='Returning')x.rt++;if(e.ok)x.ok++});
+ $('#t3').innerHTML=`<thead><tr><th>Outlet</th><th>Type</th><th>City</th><th class="r">Unique (counted)</th><th class="r">New</th><th class="r">Re-counted 12m+</th><th class="r">Recs</th><th class="r">Validated</th></tr></thead><tbody>${Object.values(om).sort((a,b)=>b.nw+b.rt-a.nw-a.rt).slice(0,50).map(x=>`<tr data-d="o|${x.o.id}" style="cursor:pointer"><td>${xs(x.o.name)}</td><td>${x.o.cat}</td><td>${xs(x.o.city)}</td><td class="r">${x.nw+x.rt}</td><td class="r">${x.nw}</td><td class="r">${x.rt}</td><td class="r">${x.ev}</td><td class="r">${x.ok}</td></tr>`).join('')}</tbody>`;
+ const cr=p=>{const k=C.by[p].filter(isU).pop();return k?(k.nc||(k.o?k.o.name:k.src)):''};const EL=CD?E.filter(e=>isU(e)&&(CD.t=='n'?e.nc==CD.k:CD.t=='s'?e.src==CD.k:e.o&&e.o.id==CD.k)):E;const pm={};EL.forEach(e=>{const x=pm[e.p]??={p:e.p,nm:e.nm,ph:e.ph,n:0,ok:0,u:new Set(),d:e.d};x.n++;if(e.ok)x.ok++;x.u.add(e.u);if(e.d<x.d)x.d=e.d});
+ const PL2=Object.values(pm).filter(x=>(!CQ||(x.nm+' '+x.ph).toLowerCase().includes(CQ))&&(!F.cty||(x.u.has('New')&&x.u.size==1?'New':'Returning')==F.cty)).sort((a,b)=>F.cso=='new'?(a.d<b.d?1:-1):F.cso=='old'?(a.d<b.d?-1:1):b.n-a.n);
+ XC={PL2,cr,E};showPerson();$('#ccnt').textContent=nf(PL2.length)+' people';const cdn=CD?(CD.t=='o'?(D.byId.get(CD.k)||{}).name:CD.k):'';$('#cdt').hidden=!CD;$('#cdt').textContent=CD?'Credited to '+cdn+' ✕':'';
+ $('#t4').innerHTML=`<thead><tr><th>Customer</th><th>Phone</th><th>First seen</th><th>Credited to</th><th>Type</th><th>Counted as</th><th class="r">Validated purchases</th></tr></thead><tbody>${PL2.slice(0,CD?500:100).map(x=>`<tr><td data-p="${xs(x.p)}" style="cursor:pointer;text-decoration:underline">${xs(x.nm)}</td><td>${xs(x.ph)}</td><td>${x.d}</td><td>${xs(cr(x.p))}</td><td>${x.u.has('New')&&x.u.size==1?'New':'Returning'}</td><td>${[...x.u].map(utag).join(', ')}</td><td class="r">${x.n}</td></tr>`).join('')}</tbody>`}
+$('#tabs').onclick=e=>{if(e.target.dataset.t)showTab(e.target.dataset.t)};
+$('#c-src').onclick=e=>{if(e.target.dataset.s){CS=e.target.dataset.s;renderC()}};
+$('#cq').oninput=e=>{CQ=e.target.value.toLowerCase();renderC()};
+const KN={outlets:'Outlets',users:'Users',vouchers:'Vouchers',rx:'Recommendations',np:'Plans',pv:'Proposal vouchers',rv:'Prescription vouchers',cust:'Customers'},M={};
+const DB=()=>new Promise((res,rej)=>{try{const r=indexedDB.open('outlet-dash',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
+const dbp=async(mode,fn)=>{const d=await DB();return new Promise((res,rej)=>{const t=d.transaction('f',mode),q=fn(t.objectStore('f'));t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error)})};
+const kindOf=h=>'identificativo' in h?'outlets':'idoperator' in h?'users':'codice' in h?'vouchers':'activation code' in h?'rv':'code' in h&&'proposal' in h?'pv':'sender account' in h?'rx':'proposal account' in h?'np':'registration date' in h?'cust':null;
+function put(kind,rows,name){const old=raw[kind];let msg;
+ if($('#mode').value=='add'&&old&&old.length){const r=mergeRows(kind,old,rows);raw[kind]=r.rows;msg=`${KN[kind]}: ${nf(r.nw)} new, ${nf(r.up)} updated, ${nf(r.rows.length)} in total`}else{raw[kind]=rows;msg=`${KN[kind]}: ${nf(rows.length)} rows`}
+ LM.push(msg);M[kind]={name,t:Date.now()};dbp('readwrite',s=>s.put({name,rows:raw[kind],t:Date.now()},kind)).catch(()=>{})}
+const fstat=()=>{$('#fs').innerHTML=Object.keys(KN).map(a=>raw[a]?`<b>${KN[a]} ✓ ${nf(raw[a].length)}</b>`:`${KN[a]} missing`).join(' · ')};
+function savedUI(){const ks=Object.keys(M);$('#sv').innerHTML=ks.length?'Saved in this browser: '+ks.map(k=>`${KN[k]} (${nf((raw[k]||[]).length)}) <button data-del="${k}" aria-label="Delete saved ${KN[k]} file" title="Delete saved file">✕</button>`).join(' ')+' <button data-del="all">Delete all</button>':''}
+$('#sv').onclick=async e=>{const k=e.target.dataset.del;if(!k)return;for(const x of k=='all'?Object.keys(M):[k]){delete raw[x];delete M[x];try{await dbp('readwrite',s=>s.delete(x))}catch(_){}}
+ if(raw.outlets)build();else{D={outlets:[],vouchers:[],byId:new Map()};C={ev:[]};$('#app').hidden=true;$('#cv').hidden=true;$('#tabs').innerHTML='';$('#empty').hidden=false}
+ fstat();savedUI()};
+$('#cv').onclick=e=>{const tr=e.target.closest('tr[data-d]');if(!tr)return;const i=tr.dataset.d.indexOf('|'),t=tr.dataset.d.slice(0,i),k=tr.dataset.d.slice(i+1);CD=CD&&CD.t==t&&CD.k==k?null:{t,k};renderC();$('#t4').scrollIntoView({behavior:'smooth',block:'center'})};
+$('#cdt').onclick=()=>{CD=null;renderC()};
+$('#tb').onclick=e=>{const c=e.target.closest('td[data-o]');if(!c)return;CD={t:'o',k:c.dataset.o};CS=CN=CO=CT=CY=CU=CV='All';showTab('c');setTimeout(()=>$('#t4').scrollIntoView({behavior:'smooth',block:'center'}),50)};
+(async()=>{if(TEAM)return;try{for(const k of Object.keys(KN)){const v=await dbp('readonly',s=>s.get(k));if(v&&v.rows){raw[k]=v.rows;M[k]={name:v.name,t:v.t}}else if(v&&v.txt){raw[k]=Papa.parse(v.txt,{header:true,skipEmptyLines:true,delimitersToGuess:[';',',','\t'],transformHeader:h=>h.replace(/^\uFEFF/,'').trim().toLowerCase()}).data;M[k]=v}}}catch(e){}if(Object.keys(M).length){fstat();savedUI();build()}})();
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const inP=d=>{if(!F.d0&&!F.d1&&!F.yr&&!F.mo)return true;if(!d)return false;return(!F.d0||d>=F.d0)&&(!F.d1||d<=F.d1)&&(!F.yr||d.slice(0,4)==F.yr)&&(!F.mo||d.slice(5,7)==F.mo)};
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const gb=d=>{if(!d)return'';const g=F.g=='auto'?'month':F.g;if(g=='day')return d;if(g=='year')return d.slice(0,4);if(g=='week'){const t=new Date(d);t.setUTCDate(t.getUTCDate()-((t.getUTCDay()+6)%7));return t.toISOString().slice(0,10)}return d.slice(0,7)};
+function initDate(){const ys=new Set();D.vouchers.forEach(v=>v.d&&ys.add(v.d.slice(0,4)));C.ev.forEach(e=>e.d&&ys.add(e.d.slice(0,4)));$('#dbar').hidden=false;
+ $('#d-yr').innerHTML='<option value="">Any year</option>'+[...ys].sort().map(y=>`<option>${y}</option>`).join('');
+ $('#d-mo').innerHTML='<option value="">Any month</option>'+MN.map((m,i)=>`<option value="${String(i+1).padStart(2,'0')}">${m}</option>`).join('');syncDate()}
+function syncDate(){$('#d-yr').value=F.yr;$('#d-mo').value=F.mo;$('#d-0').value=F.d0;$('#d-1').value=F.d1;$('#d-g').value=F.g;$('#csort').value=F.cso;
+ const a=[];if(F.yr)a.push(F.yr);if(F.mo)a.push(MN[+F.mo-1]);if(F.d0||F.d1)a.push((F.d0||'start')+' to '+(F.d1||'today'));
+ $('#d-n').textContent=a.length?'Showing '+a.join(', ')+'. Vouchers use the validation date; recommendations and plans use the creation date.':'Showing all dates'}
+function dateChanged(){syncDate();F.n=50;TAB=='c'?renderC():TAB=='p'?renderP():render()}
+$('#d-pre').onchange=e=>{const v=e.target.value,t=new Date(),y=t.getFullYear(),m=t.getMonth();F.yr=F.mo=F.d0=F.d1='';
+ if(v=='30'||v=='90'){const s=new Date(t);s.setDate(s.getDate()-(+v-1));F.d0=iso(s);F.d1=iso(t)}
+ else if(v=='tm'){F.d0=iso(new Date(y,m,1));F.d1=iso(new Date(y,m+1,0))}
+ else if(v=='lm'){F.d0=iso(new Date(y,m-1,1));F.d1=iso(new Date(y,m,0))}
+ else if(v=='ty')F.yr=String(y);else if(v=='ly')F.yr=String(y-1);dateChanged()};
+$('#d-yr').onchange=e=>{F.yr=e.target.value;$('#d-pre').value='';dateChanged()};
+$('#d-mo').onchange=e=>{F.mo=e.target.value;$('#d-pre').value='';dateChanged()};
+$('#d-0').onchange=e=>{F.d0=e.target.value;$('#d-pre').value='';dateChanged()};
+$('#d-1').onchange=e=>{F.d1=e.target.value;$('#d-pre').value='';dateChanged()};
+$('#d-g').onchange=e=>{F.g=e.target.value;dateChanged()};
+$('#csort').onchange=e=>{F.cso=e.target.value;renderC()};
+$('#d-x').onclick=()=>{F.d0=F.d1=F.yr=F.mo='';$('#d-pre').value='';dateChanged()};
+let ND=null,CP=null,CN='All',CO='All',CT='All',CY='All',CU='All',CV='All';
+const isU=e=>e.u=='New'||e.u=='Returning',utag=u=>u=='Pending'?'Not validated':u=='Repeat'?'Follow-up':u=='Returning'?'Re-counted (12m+)':'New',SET={s:v=>CS=v,n:v=>CN=v,o:v=>CO=v,t:v=>{CT=v;CY='All'},y:v=>CY=v,u:v=>CU=v,v:v=>CV=v};
+$('#c-src').onchange=e=>{const f=SET[e.target.dataset.k];if(f){f(e.target.value);renderC()}};
+$('#c-src').onclick=e=>{if(e.target.id=='cclr'){CS=CN=CO=CT=CY=CU=CV='All';renderC()}};
+$('#ctype').onchange=e=>{F.cty=e.target.value;renderC()};
+function showPerson(){const el=$('#cdet');if(!CP||!C.by[CP]){el.innerHTML='';return}
+ const ev=C.by[CP],V=D.vouchers.filter(v=>v.p===CP).sort((a,b)=>a.d<b.d?-1:1),e0=ev[0],tag=utag,VS=ev.flatMap(e=>(e.vs||[]).map(v=>({v,e})));
+ el.innerHTML=`<div class="card" style="margin:0 0 10px;background:var(--bg)"><h2>${xs(e0.nm)} · ${xs(e0.ph)} <button id="cdx">Close</button></h2><p class="st">${ev.length} plans and recommendations, ${VS.length?VS.length+' vouchers created, '+VS.filter(x=>x.v.st=='used').length+' used':V.length+' vouchers validated'}. This is the customer’s full history, whatever dates are selected above.</p>
+<h2>Plans and recommendations</h2><div class="tw"><table><thead><tr><th>Date and time</th><th>Kind</th><th>Created by</th><th>Source</th><th>Counted as</th><th>Validated</th><th>Voucher(s)</th><th class="r">Amount</th></tr></thead><tbody>${ev.map(e=>`<tr><td>${e.t.slice(0,16)}</td><td>${e.kind}</td><td>${xs(e.nc||(e.o?e.o.name:e.src))}</td><td>${xs(e.src)}</td><td>${tag(e.u)}</td><td>${e.ok?'Yes':'No'}</td><td>${vcol(e)[0]}</td><td class="r">${vcol(e)[1]}</td></tr>`).join('')}</tbody></table></div>
+<h2 style="margin-top:10px">${VS.length?'Vouchers created for this customer':'Vouchers validated at outlets'}</h2>${VS.length?`<div class="tw"><table><thead><tr><th>Voucher code</th><th>Created for</th><th>Voucher created</th><th>Status</th><th>Validated on</th><th>Validated at</th><th class="r">Amount</th></tr></thead><tbody>${VS.slice().sort((a,b)=>a.v.cr<b.v.cr?-1:1).map(({v,e})=>`<tr><td>${xs(v.code)}</td><td>${e.kind} ${e.t.slice(0,10)} (${xs(e.nc||(e.o?e.o.name:e.src))})</td><td>${v.cr.slice(0,16)}</td><td>${v.st=='used'?'Used':v.st=='deleted'?'Deleted':v.st=='expired'?'Expired':'Not used'}</td><td>${v.ua?v.ua.slice(0,16):'\u2013'}</td><td>${v.st=='used'?xs(v.o?v.o.name+' ('+v.o.cat+')':v.nm||'\u2013'):'\u2013'}</td><td class="r">${vtxt(v)}</td></tr>`).join('')}</tbody></table></div>`:V.length?`<div class="tw"><table><thead><tr><th>Validated on</th><th>Voucher code</th><th>Type</th><th>Validated at</th><th>NC</th><th class="r">Amount</th></tr></thead><tbody>${V.map(v=>{const o=D.byId.get(v.oid);return`<tr><td>${v.d||'\u2013'}</td><td>${xs(v.code)}</td><td>${v.t}</td><td>${xs(o.name)} (${o.cat})</td><td>${v.t=='Proposal'?xs(v.nc):'\u2013'}</td><td class="r">\u20b9${nf(v.amt)}</td></tr>`}).join('')}</tbody></table></div>`:'<p class="st">No validated vouchers found for this customer.</p>'}</div>`;
+ $('#cdx').onclick=()=>{CP=null;showPerson()}}
+$('#t4').onclick=e=>{const c=e.target.closest('td[data-p]');if(!c)return;CP=CP==c.dataset.p?null:c.dataset.p;showPerson();if(CP)$('#cdet').scrollIntoView({behavior:'smooth',block:'nearest'})};
+$('#ncm').onchange=e=>{F.nm=e.target.value;ND=null;renderC()};
+$('#tn').onclick=e=>{const c=e.target.closest('[data-nd]');if(!c)return;const a=c.dataset.nd.split('|'),s=a[0],m=a[1],nc=a.slice(2).join('|');ND=ND&&ND.s==s&&ND.m==m&&ND.nc==nc?null:{s,m,nc};renderC();setTimeout(()=>$('#ncd').scrollIntoView({behavior:'smooth',block:'nearest'}),50)};
+let XC=null,XO=null;
+const vact=e=>(e.vs||[]).filter(v=>v.st!='deleted'),vtxt=v=>v.amt!=null?'\u20b9'+nf(v.amt):v.lo!=null?(v.lo==v.hi?'\u20b9'+nf(v.lo):'\u20b9'+nf(v.lo)+' to \u20b9'+nf(v.hi)):'\u2013';
+function vcol(e){const a=vact(e);if(!a.length)return e.code?[e.code,'\u20b9'+nf(e.vamt)]:['\u2013','\u2013'];
+ if(a.length==1)return[a[0].code+(a[0].st=='used'?' (used)':''),vtxt(a[0])];
+ const u=a.filter(v=>v.st=='used'),ia=a.reduce((s,v)=>s+(v.amt!=null?v.amt:(v.hi||0)),0);
+ return[a.length+' vouchers ('+u.length+' used)','\u20b9'+nf(u.reduce((s,v)=>s+(v.amt||0),0))+' used of \u20b9'+nf(ia)]}
+const fl=a=>XLSX.utils.aoa_to_sheet([['Report created',new Date().toISOString().slice(0,16).replace('T',' ')],...a]),ts=t=>XLSX.utils.table_to_sheet(t);
+async function xdl(S,name){const m=$('#xmsg');m.textContent='';try{const dl=window.claude&&await claude.use('downloads');
+ const wb=XLSX.utils.book_new();S.forEach(([n,s])=>XLSX.utils.book_append_sheet(wb,s,n.slice(0,31)));
+ const data=XLSX.write(wb,{type:'array',bookType:'xlsx'});if(dl)await dl.save({filename:name,data});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}m.textContent='Saved '+name}catch(e){m.textContent=e&&e.code=='declined'?'Download cancelled.':'Could not create the Excel file ('+((e&&e.code)||'error')+').'}}
+function exportC(){if(!XC)return;const{PL2,cr,E}=XC,A=XLSX.utils.aoa_to_sheet;
+ const S=[['Filters',fl([['Dates',$('#d-n').textContent],['Source',CS],['NC',CN],['Outlet',CO=='All'?'All':(D.byId.get(CO)||{}).name],['State',CT],['City',CY],['Counted as',CU],['Customer type',F.cty||'All']])],
+  ['Customers',A([['Customer','Phone','First seen','Credited to','Type','Counted as','Validated purchases'],...PL2.map(x=>[x.nm,x.ph,x.d,cr(x.p),x.u.has('New')&&x.u.size==1?'New':'Returning',[...x.u].map(utag).join(', '),x.n])])],
+  ['Plans & recommendations',A([['Date and time','Customer','Phone','Kind','Created by','Source','State','City','Counted as','Validated','Vouchers','Vouchers used','Voucher amount (used / issued)','Voucher codes'],...E.map(e=>{const a=vact(e);return[e.t,e.nm,e.ph,e.kind,e.nc||(e.o?e.o.name:e.src),e.src,e.st,e.ct,utag(e.u),e.ok?'Yes':'No',a.length||(e.code?1:0),a.filter(v=>v.st=='used').length,vcol(e)[1],a.map(v=>v.code).join(', ')||e.code||'']})])]];
+ if(E.some(e=>e.vs))S.splice(3,0,['Vouchers',A([['Voucher code','Created for','Plan or recommendation created','Created by','Customer','Phone','Voucher created','Status','Validated on','Validated at','Amount','Discount range low','Discount range high'],...E.flatMap(e=>(e.vs||[]).map(v=>[v.code,e.kind,e.t,e.nc||(e.o?e.o.name:e.src),e.nm,e.ph,v.cr,v.st,v.ua||'',v.o?v.o.name:(v.nm||''),v.amt??'',v.lo??'',v.hi??'']))])]);
+ [['NC summary','tn'],['By source','t1'],['By NC','t2'],['Top outlets','t3']].forEach(([n,id])=>S.push([n,ts($('#'+id))]));
+ if(CP){const t=document.querySelectorAll('#cdet table');if(t[0])S.push(['Customer history',ts(t[0])]);if(t[1])S.push(['Customer vouchers',ts(t[1])])}
+ xdl(S,'customers-report-'+new Date().toISOString().slice(0,10)+'.xlsx')}
+function exportO(){if(!XO)return;const A=XLSX.utils.aoa_to_sheet;
+ xdl([['Filters',fl([['Dates',$('#d-n').textContent],['Type',F.cat],['Voucher type',F.vt],['NC',F.nc],['State',F.state],['City',F.city],['Test accounts',F.test?'Included':'Hidden']])],
+  ['Outlets',A([['Outlet','Type','City','State','Unique customers','Vouchers','Prescription','Proposal','NC (proposals)','Amount'],...XO.map(o=>[o.name,o.cat,o.city,o.state,o.uc||0,o.a.v,o.a.pr,o.a.pp,Object.entries(o.a.nc).sort((a,b)=>b[1]-a[1]).map(([n,c])=>n+' ('+c+')').join(', '),o.a.amt])])],
+  ['NC performance',ts($('#nct').closest('table'))]],'outlets-report-'+new Date().toISOString().slice(0,10)+'.xlsx')}
+$('#c-src').addEventListener('click',e=>{if(e.target.id=='xlc')exportC()});$('#xlo').onclick=exportO;
+let BK=null;
+function bulkRun(){const toks=[...new Set($('#bk').value.split(/[\s,;]+/).map(x=>x.trim()).filter(Boolean))];
+ BK=toks.map(tok=>{const em=tok.includes('@'),d=P10(tok),k=em?'e'+tok.toLowerCase():(d.length==10?'p'+d:''),p=k&&C.kmap?C.kmap[k]:null,ev=p&&C.by[p]?C.by[p]:null;return{tok,p:ev?p:null,ev,bad:!k}});renderBulk()}
+function renderBulk(){const t=$('#bkt'),R=BK||[];$('#bkmsg').textContent=R.length?R.filter(r=>r.p).length+' of '+R.length+' found':'';
+ if(!R.length){t.innerHTML='';return}
+ t.innerHTML=`<thead><tr><th>Entered</th><th>Status</th><th>Customer</th><th>Phone</th><th class="r">Plans and recommendations</th><th class="r">Vouchers created</th><th class="r">Vouchers used</th><th class="r">Validated purchases</th></tr></thead><tbody>${R.map(r=>{if(!r.p)return`<tr><td>${xs(r.tok)}</td><td>${r.bad?'Not a valid number or email':'Not found'}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;const vs=r.ev.flatMap(vact);return`<tr><td>${xs(r.tok)}</td><td>Found</td><td data-p="${xs(r.p)}" style="cursor:pointer;text-decoration:underline">${xs(r.ev[0].nm)}</td><td>${xs(r.ev[0].ph)}</td><td class="r">${r.ev.length}</td><td class="r">${vs.length}</td><td class="r">${vs.filter(v=>v.st=='used').length}</td><td class="r">${r.ev.filter(e=>e.u!='Pending').length}</td></tr>`}).join('')}</tbody>`}
+function exportB(){if(!BK||!BK.length){$('#bkmsg').textContent='Paste some numbers first.';return}const A=XLSX.utils.aoa_to_sheet,F2=BK.filter(r=>r.p),cr=XC&&XC.cr;
+ const lk=[['Entered','Status','Customer','Phone','Credited to','Counted as','Plans and recommendations','Vouchers created','Vouchers used','Validated purchases'],...BK.map(r=>r.p?[r.tok,'Found',r.ev[0].nm,r.ev[0].ph,cr?cr(r.p):'',[...new Set(r.ev.map(e=>utag(e.u)))].join(', '),r.ev.length,r.ev.flatMap(vact).length,r.ev.flatMap(vact).filter(v=>v.st=='used').length,r.ev.filter(e=>e.u!='Pending').length]:[r.tok,r.bad?'Not a valid number or email':'Not found','','','','','','','',''])];
+ const pe=[['Entered','Date and time','Customer','Phone','Kind','Created by','Source','State','City','Counted as','Validated','Vouchers','Vouchers used','Voucher amount (used / issued)','Voucher codes']],pv=[['Entered','Voucher code','Created for','Plan or recommendation created','Created by','Customer','Voucher created','Status','Validated on','Validated at','Amount','Discount range low','Discount range high']],vr=[['Entered','Validated on','Voucher code','Type','Validated at','NC','Amount']];
+ F2.forEach(r=>{r.ev.forEach(e=>{const a=vact(e);pe.push([r.tok,e.t,e.nm,e.ph,e.kind,e.nc||(e.o?e.o.name:e.src),e.src,e.st,e.ct,utag(e.u),e.ok?'Yes':'No',a.length||(e.code?1:0),a.filter(v=>v.st=='used').length,vcol(e)[1],a.map(v=>v.code).join(', ')||e.code||'']);(e.vs||[]).forEach(v=>pv.push([r.tok,v.code,e.kind,e.t,e.nc||(e.o?e.o.name:e.src),e.nm,v.cr,v.st,v.ua||'',v.o?v.o.name:(v.nm||''),v.amt??'',v.lo??'',v.hi??'']))});
+  D.vouchers.filter(v=>v.p===r.p).forEach(v=>{const o=D.byId.get(v.oid);vr.push([r.tok,v.d,v.code,v.t,o?o.name+' ('+o.cat+')':'',v.t=='Proposal'?v.nc:'',v.amt])})});
+ const S=[['Lookup',A(lk)],['Plans & recommendations',A(pe)]];if(pv.length>1)S.push(['Vouchers',A(pv)]);if(vr.length>1)S.push(['Voucher report',A(vr)]);
+ xdl(S,'customer-lookup-'+new Date().toISOString().slice(0,10)+'.xlsx')}
+$('#bkgo').onclick=bulkRun;$('#bkxl').onclick=()=>{bulkRun();exportB()};$('#bkclr').onclick=()=>{$('#bk').value='';BK=null;renderBulk()};
+$('#bkt').onclick=e=>{const c=e.target.closest('td[data-p]');if(!c)return;CP=c.dataset.p;showPerson();$('#cdet').scrollIntoView({behavior:'smooth',block:'nearest'})};
+let LM=[];
+const KEY={outlets:r=>g(r,'identificativo'),users:r=>g(r,'idoperator'),vouchers:r=>g(r,'codice'),rx:r=>g(r,'id'),np:r=>g(r,'id'),pv:r=>g(r,'code'),rv:r=>g(r,'code'),cust:r=>g(r,'email')+'|'+g(r,'phone number')};
+function mergeRows(kind,old,inc){const kf=KEY[kind],m=new Map();let nw=0,up=0;old.forEach(r=>m.set(kf(r)||JSON.stringify(r),r));inc.forEach(r=>{const k=kf(r)||JSON.stringify(r);m.has(k)?up++:nw++;m.set(k,r)});return{rows:[...m.values()],nw,up}}
+async function saveBlob(name,data,type){const dl=window.claude&&await claude.use('downloads');if(dl)await dl.save({filename:name,data});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}}
+$('#bkup').onclick=async()=>{const m=$('#xmsg');if(!Object.keys(raw).length){m.textContent='Nothing to back up yet.';return}try{const o={v:1,saved:new Date().toISOString(),files:{}};for(const k of Object.keys(raw))o.files[k]={name:(M[k]||{}).name||k,rows:raw[k]};
+ let data=new TextEncoder().encode(JSON.stringify(o)),name='dashboard-backup-'+new Date().toISOString().slice(0,10)+'.json';
+ if(window.CompressionStream){data=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());name+='.gz'}
+ await saveBlob(name,data,'application/octet-stream');m.textContent='Backup saved: '+name}catch(e){m.textContent='Could not create the backup.'}};
+$('#rstr').onclick=()=>$('#rf').click();
+$('#rf').onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=$('#xmsg');try{let buf=await f.arrayBuffer();const u=new Uint8Array(buf);if(u[0]==0x1f&&u[1]==0x8b)buf=await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+ const o=JSON.parse(new TextDecoder().decode(buf));if(!o.files)throw 0;for(const k of Object.keys(o.files)){if(!KN[k])continue;raw[k]=o.files[k].rows;M[k]={name:o.files[k].name,t:Date.now()};try{await dbp('readwrite',s=>s.put({name:o.files[k].name,rows:raw[k],t:Date.now()},k))}catch(_){}}
+ fstat();savedUI();build();m.textContent='Backup restored.'}catch(x){m.textContent='That file is not a valid backup.'}e.target.value=''};
+let PF={s:'All',l:'All',p:'All',n:'All',o:'All'},XP=null;
+const spOf=l=>/feline/i.test(l)?'cat':'dog',r1=x=>Math.round(x*10)/10;
+function renderP(){const K=$('#pk');
+ if(!C.pd||!C.pd.length){K.innerHTML='<div class="card">Load the proposal vouchers and prescription vouchers files to see product analytics.</div>';$('#pf').innerHTML='';return}
+ const sl=(k,lab,a,s)=>`<label class="st">${lab} <select data-k="${k}" aria-label="${lab}"><option>All</option>${a.map(x=>`<option${x==s?' selected':''}>${xs(x)}</option>`).join('')}</select></label>`,uq=f=>[...new Set(C.pd.map(f).filter(Boolean))].sort();
+ $('#pf').innerHTML=sl('s','Source',['Proposal','Prescription'],PF.s)+sl('l','Product line',uq(x=>x.pl),PF.l)+sl('p','Species',['dog','cat'],PF.p)+sl('n','NC',uq(x=>x.nc),PF.n)+sl('o','Outlet type',['GC','Store','Vet','Breeder','Groomer'],PF.o)+'<button id="pclr">Clear filters</button><button class="pri" id="xlp">Download Excel</button>';
+ const ok2=x=>(PF.s=='All'||x.src==PF.s)&&(PF.l=='All'||x.pl==PF.l)&&(PF.p=='All'||x.sp==PF.p)&&(PF.n=='All'||x.nc==PF.n);
+ const US=C.pd.filter(x=>x.st=='used'&&ok2(x)&&(PF.o=='All'||(x.o&&x.o.cat==PF.o))&&inP((x.ua||'').slice(0,10))),CR=C.pd.filter(x=>x.src=='Proposal'&&ok2(x)&&inP(x.cr.slice(0,10)));
+ const cnt=(L,f)=>{const m={};L.forEach(x=>{const k=f(x);m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+ const kg=US.reduce((s,x)=>s+x.bg,0),disc=US.reduce((s,x)=>s+(x.amt||0),0),cu=CR.filter(x=>x.st=='used').length,tl=cnt(US,x=>x.pl)[0];
+ K.innerHTML=[[nf(US.length),'Bags purchased (vouchers used)'],[nf(kg),'Kg purchased'],['\u20b9'+nf(disc),'Discount used'],[CR.length?Math.round(cu/CR.length*100)+'%':'\u2013','Proposal vouchers used'],[tl?tl[0]:'\u2013','Top product line']].map(([n,l])=>`<div class="card kpi"><div class="n" style="${n.length>12?'font-size:18px':''}">${n}</div><div class="l">${l}</div></div>`).join('');
+ const lines=cnt(US,x=>x.pl).map(a=>a[0]);
+ mk('p1','bar',{labels:lines,datasets:['Proposal','Prescription'].map(s=>({label:s,backgroundColor:VTC[s],data:lines.map(l=>US.filter(x=>x.pl==l&&x.src==s).length)}))},stk(1));
+ const cl=[...new Set(CR.map(x=>x.pl))].sort();
+ mk('p2','bar',{labels:cl,datasets:[{label:'Created',backgroundColor:'#94a3b8',data:cl.map(l=>CR.filter(x=>x.pl==l).length)},{label:'Used',backgroundColor:'#0f766e',data:cl.map(l=>CR.filter(x=>x.pl==l&&x.st=='used').length)}]},{indexAxis:'y'});
+ const spc=cnt(US,x=>x.sp);mk('p3','doughnut',{labels:spc.map(a=>a[0]),datasets:[{data:spc.map(a=>a[1]),backgroundColor:spc.map(a=>a[0]=='cat'?'#be185d':'#0f766e')}]});
+ const bs=[...new Set(US.map(x=>x.bg))].sort((a,b)=>a-b);mk('p4','bar',{labels:bs.map(b=>b+' kg'),datasets:[{label:'Bags',backgroundColor:'#0f766e',data:bs.map(b=>US.filter(x=>x.bg==b).length)}]});
+ const tp=cnt(US,x=>x.pr).slice(0,10);mk('p5','bar',{labels:tp.map(a=>a[0]),datasets:[{label:'Bags',backgroundColor:'#2563eb',data:tp.map(a=>a[1])}]},{indexAxis:'y'});
+ const per=[...new Set(US.map(x=>gb((x.ua||'').slice(0,10))).filter(Boolean))].sort();mk('p6','bar',{labels:per,datasets:['Proposal','Prescription'].map(s=>({label:s,backgroundColor:VTC[s],data:per.map(p=>US.filter(x=>x.src==s&&gb(x.ua.slice(0,10))==p).length)}))},stk());
+ const tbl=(el,H,R,nt)=>{$(el).innerHTML=`<thead><tr>${H.map((h,i)=>`<th${i>=nt?' class="r"':''}>${h}</th>`).join('')}</tr></thead><tbody>${R.map(r=>`<tr>${r.map((c,i)=>`<td${i>=nt?' class="r"':''}>${typeof c=='number'?nf(c):xs(c)}</td>`).join('')}</tr>`).join('')}</tbody>`};
+ const lset=[...new Set([...US.map(x=>x.pl),...CR.map(x=>x.pl)])].filter(Boolean).sort();
+ tbl('#tp1',['Product line','Species','Bags purchased','From proposals','From prescriptions','Kg','Discount (\u20b9)','Proposal vouchers created','Used'],lset.map(l=>{const u=US.filter(x=>x.pl==l),c=CR.filter(x=>x.pl==l),cu2=c.filter(x=>x.st=='used').length;return[l,spOf(l),u.length,u.filter(x=>x.src=='Proposal').length,u.filter(x=>x.src=='Prescription').length,r1(u.reduce((s,x)=>s+x.bg,0)),u.reduce((s,x)=>s+(x.amt||0),0),c.length,c.length?Math.round(cu2/c.length*100)+'%':'\u2013']}).sort((a,b)=>b[2]-a[2]),2);
+ const pks=[...new Set([...US,...CR].map(x=>x.pl+'|'+x.pr))];
+ tbl('#tp2',['Product line','Product','Bags purchased','Kg','Discount (\u20b9)','Proposal vouchers created','Used'],pks.map(k=>{const i=k.indexOf('|'),l=k.slice(0,i),p=k.slice(i+1),u=US.filter(x=>x.pl==l&&x.pr==p),c=CR.filter(x=>x.pl==l&&x.pr==p),cu2=c.filter(x=>x.st=='used').length;return[l,p,u.length,r1(u.reduce((s,x)=>s+x.bg,0)),u.reduce((s,x)=>s+(x.amt||0),0),c.length,c.length?Math.round(cu2/c.length*100)+'%':'\u2013']}).sort((a,b)=>b[2]-a[2]).slice(0,100),2);
+ const EV=C.ev.filter(e=>e.pl&&inP(e.d)&&(PF.l=='All'||e.pl==PF.l)&&(PF.p=='All'||spOf(e.pl)==PF.p)&&(PF.n=='All'||e.nc==PF.n)&&(PF.s=='All'||(PF.s=='Proposal')==(e.kind=='Nutrition plan')));
+ tbl('#tp3',['Product line','Species','Plans by NCs','Recommendations by stores and vets','Validated','Validated share'],[...new Set(EV.map(e=>e.pl))].sort().map(l=>{const a=EV.filter(e=>e.pl==l),p=a.filter(e=>e.kind=='Nutrition plan').length,v=a.filter(e=>e.ok).length;return[l,spOf(l),p,a.length-p,v,a.length?Math.round(v/a.length*100)+'%':'\u2013']}).sort((a,b)=>b[2]+b[3]-a[2]-a[3]),2);
+ XP={US,CR}}
+function exportP(){if(!XP)return;const A=XLSX.utils.aoa_to_sheet,{US,CR}=XP;
+ xdl([['Filters',fl([['Dates',$('#d-n').textContent],['Source',PF.s],['Product line',PF.l],['Species',PF.p],['NC',PF.n],['Outlet type',PF.o]])],['By product line',ts($('#tp1'))],['By product',ts($('#tp2'))],['Planned & recommended',ts($('#tp3'))],
+  ['Purchases',A([['Validated on','Voucher code','Source','Product line','Product','Species','Bag (kg)','Discount','Voucher created','NC','Validated at','Outlet type'],...US.map(x=>[x.ua,x.code,x.src,x.pl,x.pr,x.sp,x.bg,x.amt||0,x.cr,x.nc,x.o?x.o.name:(x.nm||''),x.o?x.o.cat:''])])],
+  ['Proposal vouchers',A([['Voucher code','Status','Product line','Product','Bag (kg)','Amount','Created','Used on','NC'],...CR.map(x=>[x.code,x.st,x.pl,x.pr,x.bg,x.amt,x.cr,x.ua||'',x.nc])])]],'products-report-'+new Date().toISOString().slice(0,10)+'.xlsx')}
+const SETP={s:v=>PF.s=v,l:v=>PF.l=v,p:v=>PF.p=v,n:v=>PF.n=v,o:v=>PF.o=v};
+$('#pf').onchange=e=>{const f=SETP[e.target.dataset.k];if(f){f(e.target.value);renderP()}};
+$('#pf').onclick=e=>{if(e.target.id=='pclr'){PF={s:'All',l:'All',p:'All',n:'All',o:'All'};renderP()}else if(e.target.id=='xlp')exportP()};
+const slim=rows=>rows.map(r=>{const o={};for(const k in r){const v=r[k];if(v!==''&&v!=null)o[k]=v}return o});
+const deriveKey=async(pw,salt,use)=>{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,use)};
+async function encBundle(obj,pw){const raw0=new TextEncoder().encode(JSON.stringify(obj)),zip=!!window.CompressionStream;
+ const pt=zip?new Uint8Array(await new Response(new Blob([raw0]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()):raw0;
+ const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12)),key=await deriveKey(pw,salt,['encrypt']);
+ const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,pt)),out=new Uint8Array(33+ct.length);
+ out.set(new TextEncoder().encode('FDB1'),0);out[4]=zip?1:0;out.set(salt,5);out.set(iv,21);out.set(ct,33);return out}
+async function decBundle(buf,pw){const u=new Uint8Array(buf);if(new TextDecoder().decode(u.slice(0,4))!='FDB1')throw new Error('format');
+ const key=await deriveKey(pw,u.slice(5,21),['decrypt']);let pt=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(21,33)},key,u.slice(33)));
+ if(u[4]==1)pt=new Uint8Array(await new Response(new Blob([pt]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+ return JSON.parse(new TextDecoder().decode(pt))}
+$('#tex').onclick=async()=>{const m=$('#xmsg'),p=$('#tpw').value;
+ if(!Object.keys(raw).length){m.textContent='Load some data first.';return}
+ if(p.length<12){m.textContent='Use a password of at least 12 characters.';return}
+ if(p!==$('#tpw2').value){m.textContent='The two passwords do not match.';return}
+ if(!(window.crypto&&crypto.subtle)){m.textContent='This browser cannot encrypt here. Open the file in Chrome or Edge.';return}
+ m.textContent='Encrypting, this can take a few seconds...';
+ try{const o={v:1,exported:new Date().toISOString(),files:{}};for(const k of Object.keys(raw))o.files[k]={name:(M[k]||{}).name||k,rows:slim(raw[k])};
+  const out=await encBundle(o,p);await saveBlob('data.enc',out,'application/octet-stream');$('#tpw').value='';$('#tpw2').value='';
+  m.textContent='Saved data.enc ('+(out.length/1048576).toFixed(1)+' MB). Upload it to your GitHub repository to update the team.'}catch(e){m.textContent='Could not export the team data.'}};
+if(TEAM){document.body.classList.add('team');document.title='Team dashboard';$('#lock').hidden=false;
+ const unlock=async()=>{const m=$('#lmsg'),b=$('#lgo'),p=$('#lpw').value;if(!p)return;b.disabled=true;m.textContent='Checking password...';
+  try{if(!(window.crypto&&crypto.subtle))throw new Error('nocrypto');let r;try{r=await fetch('data.enc?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0}catch(e){m.textContent='Could not load the data file. Open this page from its web address.';b.disabled=false;return}
+   const o=await decBundle(await r.arrayBuffer(),p);for(const k of Object.keys(o.files)){if(KN[k]){raw[k]=o.files[k].rows;M[k]={name:o.files[k].name}}}
+   $('#tinfo').textContent='View only. Data updated '+new Date(o.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
+  catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use Chrome, Edge, Safari or Firefox.':'Wrong password, or the data file is damaged.'}b.disabled=false};
+ $('#lgo').onclick=unlock;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock()};setTimeout(()=>$('#lpw').focus(),50)}
+$('#pick').onclick=()=>$('#f').click();$('#f').onchange=e=>load(e.target.files);
+const dz=$('#drop');['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));dz.addEventListener('drop',e=>load(e.dataTransfer.files));
+$('#s-state').onchange=e=>{F.state=e.target.value;cities();render()};$('#s-city').onchange=e=>{F.city=e.target.value;render()};
+$('#nct').onclick=e=>{const tr=e.target.closest('tr');if(!tr||!tr.dataset.nc)return;F.nc=F.nc==tr.dataset.nc?'All':tr.dataset.nc;F.n=50;render()};
+$('#t-test').onchange=e=>{F.test=e.target.checked;render()};$('#q').oninput=e=>{F.q=e.target.value;F.n=50;render()};$('#more').onclick=()=>{F.n+=100;render()};
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>D.outlets.length&&render());
+addEventListener('resize',()=>D.outlets.length&&render());
+</script></main></body></html>
