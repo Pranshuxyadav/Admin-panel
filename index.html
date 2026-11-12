@@ -503,6 +503,46 @@ if(TEAM){document.body.classList.add('team');document.title='Team dashboard';$('
    $('#tinfo').textContent='View only. Data updated '+new Date(o.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
   catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use Chrome, Edge, Safari or Firefox.':'Wrong password, or the data file is damaged.'}b.disabled=false};
  $('#lgo').onclick=unlock;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock()};setTimeout(()=>$('#lpw').focus(),50)}
+const KEEP=new Set(['added by','amount','bag','bag purchased','category','city','code','codice','company','contact','customer','customer email','customer phone','date','displayed name','email','id','identificativo','idoperator','internal customer id','lastname','latitude','longitude','managed by','name','phone number','privacy acceptance date','producr line purchased','product','product line','product purchased','promo','proposal','proposal account','proposal name','proposal status','proposers','recognized discount','sender account','species purchased','state','state/province','status','store voucher','type','used at','used in contact','used in id','used in internal customer id','used on','used on internal customer id','uset at']);
+function prune(kind,rows){const out=[];let drop=0;for(const r of rows){if((kind=='np'&&g(r,'status').toLowerCase()=='deleted')||(kind=='rx'&&g(r,'proposal status').toLowerCase()=='annullato')){drop++;continue}const o={};for(const k in r){const v=r[k];if(v===''||v==null)continue;if(KEEP.has(k)||/^discount\d+$/.test(k))o[k]=v}out.push(o)}return{rows:out,drop}}
+const gz=async b=>new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()),gunz=async b=>new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+const hex=u=>[...u].map(x=>x.toString(16).padStart(2,'0')).join(''),KC={},keyFor=async(pw,salt,use)=>KC[hex(salt)+use[0]]??=await deriveKey(pw,salt,use);
+async function encPart(obj,key,salt){const pt=await gz(new TextEncoder().encode(JSON.stringify(obj))),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,pt)),out=new Uint8Array(33+ct.length);out.set(new TextEncoder().encode('FDB2'),0);out[4]=1;out.set(salt,5);out.set(iv,21);out.set(ct,33);return out}
+async function decPart(buf,pw){const u=new Uint8Array(buf);if(new TextDecoder().decode(u.slice(0,4))!='FDB2')throw new Error('format');const key=await keyFor(pw,u.slice(5,21),['decrypt']);return JSON.parse(new TextDecoder().decode(await gunz(new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(21,33)},key,u.slice(33))))))}
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})(),crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){const en=new TextEncoder(),P=[],Cn=[];let off=0;
+ for(const f of files){const nm=en.encode(f.name),crc=crc32(f.data),L=new DataView(new ArrayBuffer(30));
+  L.setUint32(0,0x04034b50,true);L.setUint16(4,20,true);L.setUint16(6,0x0800,true);L.setUint16(12,0x21,true);L.setUint32(14,crc,true);L.setUint32(18,f.data.length,true);L.setUint32(22,f.data.length,true);L.setUint16(26,nm.length,true);P.push(new Uint8Array(L.buffer),nm,f.data);
+  const C=new DataView(new ArrayBuffer(46));C.setUint32(0,0x02014b50,true);C.setUint16(4,20,true);C.setUint16(6,20,true);C.setUint16(8,0x0800,true);C.setUint16(14,0x21,true);C.setUint32(16,crc,true);C.setUint32(20,f.data.length,true);C.setUint32(24,f.data.length,true);C.setUint16(28,nm.length,true);C.setUint32(42,off,true);Cn.push(new Uint8Array(C.buffer),nm);off+=30+nm.length+f.data.length}
+ const cs=Cn.reduce((s,a)=>s+a.length,0),E=new DataView(new ArrayBuffer(22));E.setUint32(0,0x06054b50,true);E.setUint16(8,files.length,true);E.setUint16(10,files.length,true);E.setUint32(12,cs,true);E.setUint32(16,off,true);
+ const all=[...P,...Cn,new Uint8Array(E.buffer)],out=new Uint8Array(all.reduce((s,a)=>s+a.length,0));let q=0;all.forEach(a=>{out.set(a,q);q+=a.length});return out}
+$('#tex').onclick=async()=>{const m=$('#xmsg'),p=$('#tpw').value;
+ if(!Object.keys(raw).length){m.textContent='Load some data first.';return}
+ if(p.length<12){m.textContent='Use a password of at least 12 characters.';return}
+ if(p!==$('#tpw2').value){m.textContent='The two passwords do not match.';return}
+ if(!(window.crypto&&crypto.subtle&&window.CompressionStream)){m.textContent='This browser cannot encrypt here. Open the file in a recent Chrome or Edge.';return}
+ const MAX=(window.__PARTMAX||18)*1048576,RAWCAP=48e6;
+ try{m.textContent='Preparing the data...';const id=hex(crypto.getRandomValues(new Uint8Array(6))),salt=crypto.getRandomValues(new Uint8Array(16)),key=await keyFor(p,salt,['encrypt']),files=[];let cur=[],curLen=0,dropped=0;
+  const add=async items=>{const b=await encPart({v:2,id,items},key,salt);if(b.length<=MAX)files.push(b);else if(items.length>1){const h=items.length>>1;await add(items.slice(0,h));await add(items.slice(h))}else if(items[0].rows.length>1){const h=items[0].rows.length>>1;await add([{kind:items[0].kind,rows:items[0].rows.slice(0,h)}]);await add([{kind:items[0].kind,rows:items[0].rows.slice(h)}])}else files.push(b)};
+  const flush=async()=>{if(!cur.length)return;const items=cur;cur=[];curLen=0;await add(items)};
+  for(const k of Object.keys(raw)){const pr=prune(k,raw[k]);dropped+=pr.drop;for(let i=0;i<pr.rows.length;i+=10000){const ch=pr.rows.slice(i,i+10000),len=JSON.stringify(ch).length;if(curLen+len>RAWCAP)await flush();cur.push({kind:k,rows:ch});curLen+=len;m.textContent='Encrypting '+(KN[k]||k)+'...'}}
+  await flush();
+  const names=files.map((_,i)=>'part-'+String(i+1).padStart(3,'0')+'.enc'),mf=new TextEncoder().encode(JSON.stringify({v:2,id,exported:new Date().toISOString(),parts:names}));
+  const zip=zipStore([{name:'manifest.json',data:mf},...files.map((d,i)=>({name:names[i],data:d}))]);
+  await saveBlob('team-data.zip',zip,'application/zip');$('#tpw').value='';$('#tpw2').value='';
+  const tot=files.reduce((s,a)=>s+a.length,0),big=Math.max(...files.map(a=>a.length));
+  m.textContent='Saved team-data.zip with '+files.length+' data part'+(files.length>1?'s':'')+' ('+(tot/1048576).toFixed(1)+' MB in total, largest '+(big/1048576).toFixed(1)+' MB). Unzip it and upload every file in it to GitHub, replacing the old ones.'+(dropped?' Left out '+nf(dropped)+' deleted plans and cancelled recommendations, which are never counted.':'')}catch(e){m.textContent='Could not export the team data.'}};
+if(TEAM){const unlock2=async()=>{const m=$('#lmsg'),b=$('#lgo'),p=$('#lpw').value;if(!p)return;b.disabled=true;m.textContent='Checking password...';
+  try{if(!(window.crypto&&crypto.subtle&&window.DecompressionStream))throw new Error('nocrypto');
+   let mf;try{const r=await fetch('manifest.json?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;mf=await r.json()}catch(e){m.textContent='Could not load the data. Open this page from its web address.';b.disabled=false;return}
+   const tmp={};let n=0;
+   for(const f of mf.parts){m.textContent='Loading part '+(++n)+' of '+mf.parts.length+'...';let r;try{r=await fetch(f+'?v='+mf.id,{cache:'no-store'});if(!r.ok)throw 0}catch(e){m.textContent='Could not load '+f+'. If the data was just updated, try again in a few minutes.';b.disabled=false;return}
+    const o=await decPart(await r.arrayBuffer(),p);if(o.id!==mf.id){m.textContent='The data is being updated. Try again in a few minutes.';b.disabled=false;return}
+    for(const it of o.items){const a=tmp[it.kind]??=[];for(const x of it.rows)a.push(x)}}
+   for(const k of Object.keys(tmp))if(KN[k]){raw[k]=tmp[k];M[k]={name:k}}
+   $('#tinfo').textContent='View only. Data updated '+new Date(mf.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
+  catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use a recent Chrome, Edge, Safari or Firefox.':'Wrong password, or the data files are damaged.'}b.disabled=false};
+ $('#lgo').onclick=unlock2;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock2()}}
 $('#pick').onclick=()=>$('#f').click();$('#f').onchange=e=>load(e.target.files);
 const dz=$('#drop');['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));dz.addEventListener('drop',e=>load(e.dataTransfer.files));
