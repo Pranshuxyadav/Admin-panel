@@ -78,7 +78,7 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 <div><h3>Files and linking</h3><ul>
 <li>Upload up to six CSV files. Each one is recognised by its columns and the separator is detected automatically: outlets (Identificativo), users (IDoperator), vouchers (Codice), recommendations (Sender account), nutrition plans (Proposal account) and customers (Registration date).</li>
 <li>Vouchers are linked to outlets by ID only (Used in ID = outlet ID). Outlet names are never used for this, because several outlets share the same name.</li>
-<li>A recommendation is tied to the outlet that created it by internal customer ID first. If that ID belongs to several outlets, or there is no ID, the sender’s name decides, using the category and then the contact name to choose between outlets with the same name. If it still can’t be tied to one outlet, it is labelled by category only, for example Store (unlinked).</li></ul></div>
+<li>A recommendation is tied to the outlet that created it by internal customer ID first, then by outlet name (using the category to choose between outlets with the same name). If it still can’t be tied, it is labelled by category only, for example Store (unlinked).</li></ul></div>
 <div><h3>Outlet types</h3><ul>
 <li>The outlets file lists every outlet. The type (Store, Vet, Breeder or Groomer) comes from its Category.</li>
 <li><b>GC</b> is a store that has a privacy acceptance date in the users file. Every other store is shown as <b>Store</b>, including stores that are missing from the users file.</li>
@@ -116,7 +116,7 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 <li>States are standardised by spelling, known short forms, close matches, or by using the state most outlets in the same city have. Anything left over shows as Unknown.</li>
 <li>City names are merged and tidied, for example Bengaluru and Bangalore.</li>
 <li>Coordinates with letters or degree format are converted. Missing or invalid ones are estimated from other outlets in the same city and drawn faintly on the map.</li>
-<li>If an outlet has no displayed name, or its displayed name is only its city (for example “Chennai”), its company or contact name is shown instead. When several outlets still share a name, the city is added, and the outlet ID if the name and city are identical. The data checks list these outlets and can download them as Excel, so the names can be fixed in your database.</li></ul></div>
+<li>If an outlet has no displayed name, its company or contact name is shown instead.</li></ul></div>
 <div><h3>Saving and privacy</h3><ul>
 <li>A team copy of this dashboard opens with a password and is view only. It shows data that the owner exported. The data file is encrypted in the owner’s browser with that password before it is shared, and the password is never stored, so it cannot be recovered: if it is lost, export again with a new one.</li>
 <li>Your files are kept in this browser only and reload when you reopen the page. They are not sent to any server.</li>
@@ -125,8 +125,7 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 <li>Voucher codes and amounts shown next to a plan or recommendation come from the voucher file, matched by the same customer and the same creation time. The voucher file lists validated vouchers only, so a plan that was never validated shows no code.</li>
 <li>Clearing your browser data also removes the saved files, and they won’t appear on another device.</li></ul></div>
 </div>
-<details><summary class="st" style="cursor:pointer">Data checks for this upload</summary><ul class="dq" id="dq"></ul></details>
-<details><summary class="st" style="cursor:pointer" id="nis">Outlet names to fix in your database</summary><p class="st" style="margin:6px 0">These outlets have only their city as the displayed name, or share a name with other outlets. The dashboard already tells them apart, but fixing the name in your database makes every report clearer. The table shows the first 300 and the Excel file has all of them.</p><button class="pri" id="xln">Download Excel</button><div class="tw"><table id="tni"></table></div></details></div>
+<details><summary class="st" style="cursor:pointer">Data checks for this upload</summary><ul class="dq" id="dq"></ul></details></div>
 </div></div>
 <div id="cv" hidden>
  <div class="bar"><div class="chips" id="c-src"></div></div>
@@ -160,7 +159,7 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const TEAM=false;
+const TEAM=true;
 const $=s=>document.querySelector(s),g=(r,k)=>String(r[k]??'').trim(),nf=n=>Math.round(n).toLocaleString('en-IN');
 const k=s=>String(s||'').toLowerCase().replace(/[^a-z]/g,''),ti=s=>String(s||'').replace(/[^a-zA-Z ]/g,' ').replace(/\s+/g,' ').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 const catOf=s=>{s=String(s).toLowerCase();return s.includes('store')?'Store':s.includes('vet')?'Vet':s.includes('breed')?'Breeder':s.includes('groom')?'Groomer':null};
@@ -198,27 +197,24 @@ function build(){
   const la=coord(g(o.r,'latitude')),lo=coord(g(o.r,'longitude'));o.la=la;o.lo=lo;o.ok=okLat(la)&&okLon(lo);
   if(o.ok){if(isNaN(+g(o.r,'latitude'))||isNaN(+g(o.r,'longitude')))cRep++;(cm[o.ck]??=[]).push([la,lo])}});
  rows.forEach(o=>{if(!o.ok){const c=cm[o.ck];if(c){o.la=c.reduce((s,x)=>s+x[0],0)/c.length;o.lo=c.reduce((s,x)=>s+x[1],0)/c.length;o.ok=true;o.est=true;cEst++}else cBad++}
-  if(!g(o.r,'displayed name'))noName++;
+  o.name=g(o.r,'displayed name')||g(o.r,'company')||g(o.r,'contact')||'(no name)';if(!g(o.r,'displayed name'))noName++;
   const u=U.get(o.id);o.test=!!u?.test;o.base=o.cat;if(o.cat==='Store'&&u&&u.gc)o.cat='GC';if(o.cat==='Store'&&!u)noUser++;o.gc=o.cat;o.active=1});
  const byId=new Map(rows.map(o=>[o.id,o]));
- const cnt={};rows.forEach(o=>{const dn=g(o.r,'displayed name'),co=g(o.r,'company'),ct=g(o.r,'contact'),cl=o.city.toLowerCase(),rc=o.rc.trim().toLowerCase(),isC=x=>!!x&&(x.toLowerCase()==cl||x.toLowerCase()==rc);o.dnc=isC(dn);o.nb=(dn&&!o.dnc)?dn:(co||ct||dn||'(no name)');const x=o.nb.toLowerCase();cnt[x]=(cnt[x]||0)+1});
- rows.forEach(o=>{o.iss=[];if(o.dnc)o.iss.push('Displayed name is only the city');const n=cnt[o.nb.toLowerCase()];if(n>1)o.iss.push('Name shared by '+n+' outlets');o.lc=(o.dnc&&o.nb.toLowerCase()!=o.city.toLowerCase())||n>1;o.name=o.lc?o.nb+' ('+o.city+')':o.nb});
- const c2={};rows.forEach(o=>{(c2[o.name.toLowerCase()]??=[]).push(o)});let idN=0;Object.values(c2).forEach(a=>{if(a.length>1)a.forEach(o=>{o.name+=' #'+o.id;o.lc=true;idN++})});
- const fixedN=rows.filter(o=>o.dnc).length;
- const dupN=Object.values(cnt).filter(n=>n>1).length;
+ const nm={};rows.forEach(o=>{const x=o.name.toLowerCase();(nm[x]??=new Set()).add(o.id)});
+ const dupN=Object.values(nm).filter(s=>s.size>1).length;
  const V=(raw.vouchers||[]).map(r=>{const t=g(r,'type').toLowerCase();return{code:g(r,'codice'),oid:g(r,'used in id'),t:t.includes('proposal')?'Proposal':t.includes('prescription')?'Prescription':'Discount',amt:parseFloat(g(r,'amount'))||0,m:g(r,'used at').slice(0,7),d:g(r,'used at').slice(0,10),ts:g(r,'date'),nc:g(r,'proposers')||'Unassigned',prod:g(r,'promo'),cu:g(r,'customer'),ph:g(r,'customer phone'),em:g(r,'customer email'),ck:(g(r,'customer phone').replace(/\D/g,'').slice(-10)||g(r,'customer email').toLowerCase()||g(r,'customer').toLowerCase())}});
  const orphan=V.filter(v=>!byId.has(v.oid)).length;
- D={outlets:rows,nameIssues:rows.filter(o=>o.iss.length),allV:V,vouchers:V.filter(v=>byId.has(v.oid)),byId};
+ D={outlets:rows,allV:V,vouchers:V.filter(v=>byId.has(v.oid)),byId};
  const stUnk=noUser;
  DQ.push(`${nf(sFix)} state values standardised (spelling, case, or taken from the outlet's city); ${sUnk} could not be resolved and show as Unknown`,
   `${nf(cFix)} city names standardised (for example Bengaluru and Bangalore merged)`,
   `${cRep} coordinates repaired (letters or degree format), ${cEst} estimated from other outlets in the same city, ${cBad} unusable`,
-  `${nf(noName)} outlets have no displayed name, so the company or contact name is shown`,`${nf(fixedN)} outlets have only their city as the displayed name (for example “Chennai”), so their company or contact name is shown with the city`,
-  `${dupN} outlet names are shared by more than one outlet, so the city is added to tell them apart${idN?`, and the outlet ID for ${nf(idN)} outlets whose name and city are still identical`:''}`,
+  `${nf(noName)} outlets have no displayed name, so company or contact name is shown`,
+  `${dupN} outlet names are shared by more than one ID; linking uses the ID only`,
   raw.users?`${nf(stUnk)} stores have no row in the users file and are labelled Store, not GC`:'Users file not loaded: no outlet can be labelled GC yet',
   raw.vouchers?`${orphan} vouchers point to an outlet ID missing from the outlets file and are left out`:'Vouchers file not loaded',
   `${rows.filter(o=>o.test).length} test accounts are hidden unless you tick Include test accounts`);
- buildC();renderNI();fill();render();
+ buildC();fill();render();
 }
 function chips(id,label,opts,key){const el=$('#'+id);el.innerHTML=`<span>${label}</span><select aria-label="${label}">${['All',...opts].map(o=>`<option${F[key]===o?' selected':''}>${xs(o)}</option>`).join('')}</select>`;el.querySelector('select').onchange=e=>{F[key]=e.target.value;F.n=50;render()}}
 function fill(){$('#empty').hidden=true;initDate();showTab(TAB);
@@ -275,22 +271,16 @@ function buildC(){
  (raw.rx||[]).forEach(r=>addEp(g(r,'phone number'),g(r,'email')));(raw.np||[]).forEach(r=>addEp(g(r,'phone number'),g(r,'email')));(raw.cust||[]).forEach(r=>addEp(g(r,'phone number'),g(r,'email')));(D.allV||D.vouchers).forEach(v=>addEp(v.ph,v.em));
  const sh=new Set(Object.keys(ep).filter(e=>ep[e].size>=2)),nk=n=>String(n||'').toLowerCase().split(/\s+/).filter(Boolean).sort().join(' ');
  const ks=(ph,em,nm)=>{const a=[],p=P10(ph),e=E1(em);if(p.length==10)a.push('p'+p);if(e.includes('@')){if(!sh.has(e))a.push('e'+e);else if(p.length!=10)a.push('e'+e+'|'+nk(nm))}a.forEach(x=>f(x));if(a.length>1)un(a[0],a[1]);return a[0]};
- const nmx=new Map(),icx=new Map(),icm=new Map();
+ const nmx=new Map(),icx=new Map();
  D.outlets.forEach(o=>[g(o.r,'displayed name'),g(o.r,'company'),g(o.r,'contact')].forEach(n=>{n=n.toLowerCase();if(n){const l=nmx.get(n)||[];if(!l.includes(o))l.push(o);nmx.set(n,l)}}));
- (raw.users||[]).forEach(r=>{const i=g(r,'internal customer id'),o=D.byId.get(g(r,'idoperator'));if(i&&o){icx.set(i,o);const l=icm.get(i)||[];if(!l.includes(o))l.push(o);icm.set(i,l)}});
- const pick=(icid,nm,cat,ctc)=>{const c=nmx.get((nm||'').toLowerCase())||[],L=icid?icm.get(icid):null;
-  const nar=a=>{if(a.length<=1)return a;let m=a.filter(x=>x.base==cat);if(m.length==1)return m;if(!m.length)m=a;const k=m.filter(x=>ctc&&g(x.r,'contact').toLowerCase()==ctc);return k.length?k:m};
-  if(L&&L.length==1)return L[0];
-  if(L&&L.length>1){const m=nar(L.filter(x=>c.includes(x)));return m.length==1?m[0]:null}
-  const m=nar(c);return m.length==1?m[0]:null};
- let lAmb=0,lNone=0;
- const link=(r,cat)=>{const icid=g(r,'internal customer id'),sa=g(r,'sender account'),o=pick(icid,sa,cat,g(r,'contact').toLowerCase());if(!o){if((nmx.get(sa.toLowerCase())||[]).length>1||(icm.get(icid)||[]).length>1)lAmb++;else lNone++}return o};
+ (raw.users||[]).forEach(r=>{const i=g(r,'internal customer id'),o=D.byId.get(g(r,'idoperator'));if(i&&o)icx.set(i,o)});
+ const link=(r,cat)=>{const o=icx.get(g(r,'internal customer id'));if(o)return o;const c=nmx.get(g(r,'sender account').toLowerCase())||[],m=c.filter(x=>x.base==cat);return m.length==1?m[0]:c.length==1?c[0]:null};
  const ev=[];
  (raw.rx||[]).forEach(r=>{if(g(r,'proposal status').toLowerCase()=='annullato')return;const k=ks(g(r,'phone number'),g(r,'email'),g(r,'name')+' '+g(r,'lastname'));if(!k)return;const cat=catOf(g(r,'category')),o=link(r,cat);
   ev.push({k,d:g(r,'date').slice(0,10),t:g(r,'date'),pl:g(r,'product line'),pr:g(r,'product'),st:o?o.state:'Unknown',ct:o?o.city:'Unknown',src:o?o.cat:cat?cat+(cat=='Store'?' (unlinked)':''):'Unknown',kind:/racc/i.test(g(r,'type'))?'Recommendation':'Prescription',ok:g(r,'store voucher')=='used',nm:(g(r,'name')+' '+g(r,'lastname')).trim(),ph:g(r,'phone number'),o})});
  (raw.np||[]).forEach(r=>{if(g(r,'status').toLowerCase()=='deleted')return;const k=ks(g(r,'phone number'),g(r,'email'),g(r,'name')+' '+g(r,'lastname'));if(!k)return;
   ev.push({k,id:g(r,'id'),d:g(r,'date').slice(0,10),t:g(r,'date'),pl:g(r,'product line').replace(/ Grain Free/i,'').replace('N&D Low Ancestral','N&D Ancestral').replace(/Canine$/,'canine'),pr:g(r,'product'),st:cleanState(g(r,'state/province'))||'Unknown',ct:ti(g(r,'city'))||'Unknown',src:'NC plan',nc:g(r,'proposal account')||'Unassigned',kind:'Nutrition plan',ok:g(r,'status').toLowerCase()=='confirmed',nm:(g(r,'name')+' '+g(r,'lastname')).trim(),ph:g(r,'phone number')})});
- const vf=new Map((D.allV||[]).map(v=>[v.code,v])),outFor=(code,icid,nm)=>{const a=vf.get(code),o0=a&&D.byId.get(a.oid);if(o0)return o0;return pick(icid,nm,undefined,'')};
+ const vf=new Map((D.allV||[]).map(v=>[v.code,v])),outFor=(code,icid,nm)=>{const a=vf.get(code),o0=a&&D.byId.get(a.oid);if(o0)return o0;const o=icid&&icx.get(icid);if(o)return o;const c=nm&&nmx.get(nm.toLowerCase());return c&&c.length==1?c[0]:null};
  const PV=(raw.pv||[]).map(r=>{const st=g(r,'state').toLowerCase();return{code:g(r,'code'),st,cr:g(r,'date'),ua:g(r,'used at'),pid:g(r,'proposal'),pl:g(r,'product line'),pr:g(r,'product'),bg:parseFloat(g(r,'bag'))||0,ncn:g(r,'proposal name')||g(r,'proposal account'),amt:parseFloat(g(r,'amount'))||0,nm:g(r,'used in contact'),o:st=='used'?outFor(g(r,'code'),g(r,'used in internal customer id'),g(r,'used in contact')):null}});
  const RV=(raw.rv||[]).map(r=>{const st=g(r,'state').toLowerCase(),ds=Object.keys(r).filter(k=>/^discount\d+$/.test(k)).map(k=>parseFloat(r[k])).filter(x=>x>0),un=g(r,'used on').split(' - ')[0].trim();return{code:g(r,'code'),st,cr:g(r,'date'),ua:g(r,'uset at'),pl:g(r,'producr line purchased'),pr:g(r,'product purchased'),bg:parseFloat(g(r,'bag purchased'))||0,spp:g(r,'species purchased').toLowerCase(),amt:st=='used'?(parseFloat(g(r,'recognized discount'))||null):null,lo:ds.length?Math.min(...ds):null,hi:ds.length?Math.max(...ds):null,ph:g(r,'customer phone'),nm:un,o:st=='used'?outFor(g(r,'code'),g(r,'used on internal customer id'),un):null}});
  const pd=[...PV.filter(v=>v.st!='deleted').map(v=>({...v,src:'Proposal',nc:v.ncn,sp:/feline/i.test(v.pl)?'cat':'dog'})),...RV.filter(v=>v.st=='used'&&v.pl).map(v=>({...v,src:'Prescription',nc:'',sp:v.spp||(/feline/i.test(v.pl)?'cat':'dog')}))];
@@ -308,12 +298,12 @@ function buildC(){
  const ds=ev.map(e=>e.d).sort(),span=ds.length?Math.round((new Date(ds[ds.length-1])-new Date(ds[0]))/864e5)+1:0;
  const cmp={};Object.keys(par).forEach(x=>{const c=cmp[f(x)]??={p:0,e:0};x[0]=='p'?c.p++:c.e++});
  C={ev,by,regP,pd,kmap:Object.fromEntries(Object.keys(par).map(x=>[x,f(x)])),span,min:ds[0],max:ds[ds.length-1],newP:new Set(ev.filter(e=>e.u=='New').map(e=>e.p))};
- if(ev.length)DQ.push(`Customers: ${nf(Object.keys(by).length)} people identified from ${nf(ev.length)} recommendations and plans, matched by phone number, using an email only when it belongs to a single phone (deleted plans and cancelled recommendations left out)`,`${nf(sh.size)} emails are used with two or more different phone numbers (for example a store’s own email), so they are not used to match customers and the phone number decides. ${nf(Object.values(cmp).filter(c=>c.p>1).length)} customers still hold more than one phone number.`,`${nf(ev.filter(e=>e.kind!='Nutrition plan'&&!e.o).length)} recommendations could not be tied to one outlet and are labelled by category only: ${nf(lAmb)} because the sender or its internal ID matches more than one outlet, ${nf(lNone)} because no outlet matches`)}
+ if(ev.length)DQ.push(`Customers: ${nf(Object.keys(by).length)} people identified from ${nf(ev.length)} recommendations and plans, matched by phone number, using an email only when it belongs to a single phone (deleted plans and cancelled recommendations left out)`,`${nf(sh.size)} emails are used with two or more different phone numbers (for example a store’s own email), so they are not used to match customers and the phone number decides. ${nf(Object.values(cmp).filter(c=>c.p>1).length)} customers still hold more than one phone number.`,`${nf(ev.filter(e=>e.kind!='Nutrition plan'&&!e.o).length)} recommendations could not be tied to an outlet ID and are labelled by category only`)}
 function renderC(){
  if(!C.ev.length){$('#ck').innerHTML='<div class="card">Load the outlets, recommendations, nutrition plans and customers files to see customers.</div>';return}
  const SRC=[...new Set(C.ev.map(e=>e.src))].sort();
  const op=(a,s)=>a.map(x=>{const v=Array.isArray(x)?x[0]:x,l=Array.isArray(x)?x[1]:x;return`<option value="${xs(v)}"${v==s?' selected':''}>${xs(l)}</option>`}).join(''),sl=(k,lab,a,s)=>`<label class="st">${lab} <select data-k="${k}" aria-label="${lab}">${op([['All','All'],...a],s)}</select></label>`,uniq=f=>[...new Set(C.ev.map(f).filter(Boolean))].sort();
- const OUT=[...new Map(C.ev.filter(e=>e.o).map(e=>[e.o.id,e.o])).values()].sort((a,b)=>a.name.localeCompare(b.name)).map(o=>[o.id,o.lc?o.name:o.name+' ('+o.city+')']);
+ const OUT=[...new Map(C.ev.filter(e=>e.o).map(e=>[e.o.id,e.o])).values()].sort((a,b)=>a.name.localeCompare(b.name)).map(o=>[o.id,o.name+' ('+o.city+')']);
  $('#c-src').innerHTML=sl('s','Source',SRC,CS)+sl('n','NC',uniq(e=>e.nc),CN)+sl('o','Outlet',OUT,CO)+sl('t','State',uniq(e=>e.st),CT)+sl('y','City',uniq(e=>(CT=='All'||e.st==CT)?e.ct:''),CY)+sl('u','Counted as',['New','Follow-up','Re-counted (12m+)','Not validated'],CU)+'<button id="cclr">Clear filters</button><button class="pri" id="xlc">Download Excel</button>';
  const E0=C.ev.filter(e=>(CS=='All'||e.src==CS)&&(CN=='All'||e.nc==CN)&&(CO=='All'||(e.o&&e.o.id==CO))&&(CT=='All'||e.st==CT)&&(CY=='All'||e.ct==CY)&&inP(e.d)),E=E0.filter(e=>CU=='Not validated'?e.u=='Pending':e.u!='Pending'&&(CU=='All'||utag(e.u)==CU)),U=E.filter(isU),cn=u=>E.filter(e=>e.u==u).length;
  $('#cwarn').textContent=C.span<365?`Your files cover ${C.span} days (${C.min} to ${C.max}). Customers marked New are new only within this data, because earlier history is not available to check. Load 12 months or more of exports to confirm who is truly first-time, and to detect customers who come back after 12 months.`:`History covers ${C.span} days.`;
@@ -513,49 +503,6 @@ if(TEAM){document.body.classList.add('team');document.title='Team dashboard';$('
    $('#tinfo').textContent='View only. Data updated '+new Date(o.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
   catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use Chrome, Edge, Safari or Firefox.':'Wrong password, or the data file is damaged.'}b.disabled=false};
  $('#lgo').onclick=unlock;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock()};setTimeout(()=>$('#lpw').focus(),50)}
-const KEEP=new Set(['added by','amount','bag','bag purchased','category','city','code','codice','company','contact','customer','customer email','customer phone','date','displayed name','email','id','identificativo','idoperator','internal customer id','lastname','latitude','longitude','managed by','name','phone number','privacy acceptance date','producr line purchased','product','product line','product purchased','promo','proposal','proposal account','proposal name','proposal status','proposers','recognized discount','sender account','species purchased','state','state/province','status','store voucher','type','used at','used in contact','used in id','used in internal customer id','used on','used on internal customer id','uset at']);
-function prune(kind,rows){const out=[];let drop=0;for(const r of rows){if((kind=='np'&&g(r,'status').toLowerCase()=='deleted')||(kind=='rx'&&g(r,'proposal status').toLowerCase()=='annullato')){drop++;continue}const o={};for(const k in r){const v=r[k];if(v===''||v==null)continue;if(KEEP.has(k)||/^discount\d+$/.test(k))o[k]=v}out.push(o)}return{rows:out,drop}}
-const gz=async b=>new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer()),gunz=async b=>new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
-const hex=u=>[...u].map(x=>x.toString(16).padStart(2,'0')).join(''),KC={},keyFor=async(pw,salt,use)=>KC[hex(salt)+use[0]]??=await deriveKey(pw,salt,use);
-async function encPart(obj,key,salt){const pt=await gz(new TextEncoder().encode(JSON.stringify(obj))),iv=crypto.getRandomValues(new Uint8Array(12)),ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,pt)),out=new Uint8Array(33+ct.length);out.set(new TextEncoder().encode('FDB2'),0);out[4]=1;out.set(salt,5);out.set(iv,21);out.set(ct,33);return out}
-async function decPart(buf,pw){const u=new Uint8Array(buf);if(new TextDecoder().decode(u.slice(0,4))!='FDB2')throw new Error('format');const key=await keyFor(pw,u.slice(5,21),['decrypt']);return JSON.parse(new TextDecoder().decode(await gunz(new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:u.slice(21,33)},key,u.slice(33))))))}
-const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})(),crc32=u=>{let c=0xFFFFFFFF;for(let i=0;i<u.length;i++)c=CRCT[(c^u[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
-function zipStore(files){const en=new TextEncoder(),P=[],Cn=[];let off=0;
- for(const f of files){const nm=en.encode(f.name),crc=crc32(f.data),L=new DataView(new ArrayBuffer(30));
-  L.setUint32(0,0x04034b50,true);L.setUint16(4,20,true);L.setUint16(6,0x0800,true);L.setUint16(12,0x21,true);L.setUint32(14,crc,true);L.setUint32(18,f.data.length,true);L.setUint32(22,f.data.length,true);L.setUint16(26,nm.length,true);P.push(new Uint8Array(L.buffer),nm,f.data);
-  const C=new DataView(new ArrayBuffer(46));C.setUint32(0,0x02014b50,true);C.setUint16(4,20,true);C.setUint16(6,20,true);C.setUint16(8,0x0800,true);C.setUint16(14,0x21,true);C.setUint32(16,crc,true);C.setUint32(20,f.data.length,true);C.setUint32(24,f.data.length,true);C.setUint16(28,nm.length,true);C.setUint32(42,off,true);Cn.push(new Uint8Array(C.buffer),nm);off+=30+nm.length+f.data.length}
- const cs=Cn.reduce((s,a)=>s+a.length,0),E=new DataView(new ArrayBuffer(22));E.setUint32(0,0x06054b50,true);E.setUint16(8,files.length,true);E.setUint16(10,files.length,true);E.setUint32(12,cs,true);E.setUint32(16,off,true);
- const all=[...P,...Cn,new Uint8Array(E.buffer)],out=new Uint8Array(all.reduce((s,a)=>s+a.length,0));let q=0;all.forEach(a=>{out.set(a,q);q+=a.length});return out}
-$('#tex').onclick=async()=>{const m=$('#xmsg'),p=$('#tpw').value;
- if(!Object.keys(raw).length){m.textContent='Load some data first.';return}
- if(p.length<12){m.textContent='Use a password of at least 12 characters.';return}
- if(p!==$('#tpw2').value){m.textContent='The two passwords do not match.';return}
- if(!(window.crypto&&crypto.subtle&&window.CompressionStream)){m.textContent='This browser cannot encrypt here. Open the file in a recent Chrome or Edge.';return}
- const MAX=(window.__PARTMAX||18)*1048576,RAWCAP=48e6;
- try{m.textContent='Preparing the data...';const id=hex(crypto.getRandomValues(new Uint8Array(6))),salt=crypto.getRandomValues(new Uint8Array(16)),key=await keyFor(p,salt,['encrypt']),files=[];let cur=[],curLen=0,dropped=0;
-  const add=async items=>{const b=await encPart({v:2,id,items},key,salt);if(b.length<=MAX)files.push(b);else if(items.length>1){const h=items.length>>1;await add(items.slice(0,h));await add(items.slice(h))}else if(items[0].rows.length>1){const h=items[0].rows.length>>1;await add([{kind:items[0].kind,rows:items[0].rows.slice(0,h)}]);await add([{kind:items[0].kind,rows:items[0].rows.slice(h)}])}else files.push(b)};
-  const flush=async()=>{if(!cur.length)return;const items=cur;cur=[];curLen=0;await add(items)};
-  for(const k of Object.keys(raw)){const pr=prune(k,raw[k]);dropped+=pr.drop;for(let i=0;i<pr.rows.length;i+=10000){const ch=pr.rows.slice(i,i+10000),len=JSON.stringify(ch).length;if(curLen+len>RAWCAP)await flush();cur.push({kind:k,rows:ch});curLen+=len;m.textContent='Encrypting '+(KN[k]||k)+'...'}}
-  await flush();
-  const names=files.map((_,i)=>'part-'+String(i+1).padStart(3,'0')+'.enc'),mf=new TextEncoder().encode(JSON.stringify({v:2,id,exported:new Date().toISOString(),parts:names}));
-  const zip=zipStore([{name:'manifest.json',data:mf},...files.map((d,i)=>({name:names[i],data:d}))]);
-  await saveBlob('team-data.zip',zip,'application/zip');$('#tpw').value='';$('#tpw2').value='';
-  const tot=files.reduce((s,a)=>s+a.length,0),big=Math.max(...files.map(a=>a.length));
-  m.textContent='Saved team-data.zip with '+files.length+' data part'+(files.length>1?'s':'')+' ('+(tot/1048576).toFixed(1)+' MB in total, largest '+(big/1048576).toFixed(1)+' MB). Unzip it and upload every file in it to GitHub, replacing the old ones.'+(dropped?' Left out '+nf(dropped)+' deleted plans and cancelled recommendations, which are never counted.':'')}catch(e){m.textContent='Could not export the team data.'}};
-if(TEAM){const unlock2=async()=>{const m=$('#lmsg'),b=$('#lgo'),p=$('#lpw').value;if(!p)return;b.disabled=true;m.textContent='Checking password...';
-  try{if(!(window.crypto&&crypto.subtle&&window.DecompressionStream))throw new Error('nocrypto');
-   let mf;try{const r=await fetch('manifest.json?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0;mf=await r.json()}catch(e){m.textContent='Could not load the data. Open this page from its web address.';b.disabled=false;return}
-   const tmp={};let n=0;
-   for(const f of mf.parts){m.textContent='Loading part '+(++n)+' of '+mf.parts.length+'...';let r;try{r=await fetch(f+'?v='+mf.id,{cache:'no-store'});if(!r.ok)throw 0}catch(e){m.textContent='Could not load '+f+'. If the data was just updated, try again in a few minutes.';b.disabled=false;return}
-    const o=await decPart(await r.arrayBuffer(),p);if(o.id!==mf.id){m.textContent='The data is being updated. Try again in a few minutes.';b.disabled=false;return}
-    for(const it of o.items){const a=tmp[it.kind]??=[];for(const x of it.rows)a.push(x)}}
-   for(const k of Object.keys(tmp))if(KN[k]){raw[k]=tmp[k];M[k]={name:k}}
-   $('#tinfo').textContent='View only. Data updated '+new Date(mf.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
-  catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use a recent Chrome, Edge, Safari or Firefox.':'Wrong password, or the data files are damaged.'}b.disabled=false};
- $('#lgo').onclick=unlock2;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock2()}}
-function renderNI(){const L=D.nameIssues||[];$('#nis').textContent='Outlet names to fix in your database ('+nf(L.length)+')';
- $('#tni').innerHTML=`<thead><tr><th>Outlet ID</th><th>Type</th><th>City</th><th>Displayed name in the database</th><th>Company</th><th>Issue</th><th>Name shown here</th></tr></thead><tbody>${L.slice(0,300).map(o=>`<tr><td>${xs(o.id)}</td><td>${o.cat}</td><td>${xs(o.city)}</td><td>${xs(g(o.r,'displayed name'))}</td><td>${xs(g(o.r,'company'))}</td><td>${xs(o.iss.join('; '))}</td><td>${xs(o.name)}</td></tr>`).join('')}</tbody>`}
-$('#xln').onclick=()=>{const L=D.nameIssues||[];xdl([['Outlet names to fix',XLSX.utils.aoa_to_sheet([['Outlet ID','Type','City','State','Displayed name in the database','Company','Contact','Issue','Name shown in the dashboard'],...L.map(o=>[o.id,o.cat,o.city,o.state,g(o.r,'displayed name'),g(o.r,'company'),g(o.r,'contact'),o.iss.join('; '),o.name])])]],'outlet-names-to-fix-'+new Date().toISOString().slice(0,10)+'.xlsx')};
 $('#pick').onclick=()=>$('#f').click();$('#f').onchange=e=>load(e.target.files);
 const dz=$('#drop');['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));dz.addEventListener('drop',e=>load(e.dataTransfer.files));
