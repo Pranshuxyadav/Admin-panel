@@ -4,22 +4,24 @@
 <title>Outlet and voucher dashboard</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-:root{--bg:#f3f5f2;--card:#fff;--ink:#17262b;--mute:#5d6e71;--line:#dce2de;--acc:#0f766e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1719;--card:#172124;--ink:#e6eeec;--mute:#93a5a8;--line:#2a393c;--acc:#2dd4bf}}
-:root[data-theme="dark"]{--bg:#0f1719;--card:#172124;--ink:#e6eeec;--mute:#93a5a8;--line:#2a393c;--acc:#2dd4bf}
+:root{--bg:#FAF9F6;--card:rgba(250,249,246,.9);--field:#FAF9F6;--ink:#353935;--mute:#586058;--line:rgba(53,57,53,.2);--acc:#0096FF;--acct:#0071BC;--err:#B42318;--grad:linear-gradient(160deg,#FAF9F6 0%,#FAF9F6 28%,#0096FF 135%);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#353935;--card:rgba(28,30,28,.85);--field:#2a2d2a;--ink:#FAF9F6;--mute:#C6CAC4;--line:rgba(250,249,246,.2);--acc:#0096FF;--acct:#5CBCFF;--err:#FFB4AB;--grad:linear-gradient(160deg,#353935 0%,#353935 28%,#0096FF 135%);color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#353935;--card:rgba(28,30,28,.85);--field:#2a2d2a;--ink:#FAF9F6;--mute:#C6CAC4;--line:rgba(250,249,246,.2);--acc:#0096FF;--acct:#5CBCFF;--err:#FFB4AB;--grad:linear-gradient(160deg,#353935 0%,#353935 28%,#0096FF 135%);color-scheme:dark}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif}
+html{background:var(--bg)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:var(--grad)}
+body{margin:0;background:transparent;color:var(--ink);font:14px/1.45 "IBM Plex Sans",system-ui,sans-serif}
 main{max-width:1280px;margin:0 auto;padding:16px}
 h1{font-size:22px;margin:0 0 2px;font-weight:600}h2{font-size:14px;margin:0 0 8px;font-weight:600}
 .sub{color:var(--mute);margin:0 0 12px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;min-width:0}
 .drop{border:1.5px dashed var(--line);border-radius:8px;padding:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card)}
 .drop.on{border-color:var(--acc)}
-button,select,input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
-button{cursor:pointer}button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button,select,input{font:inherit;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+button{cursor:pointer}button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
 :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
-.st{font-size:12px;color:var(--mute)}.st b{color:var(--acc)}
+.st{font-size:12px;color:var(--mute)}.st b{color:var(--acct)}
 .bar{display:flex;flex-wrap:wrap;gap:8px 14px;margin:12px 0;align-items:center}
 .chips{display:flex;gap:4px;flex-wrap:wrap;align-items:center}.chips span{color:var(--mute);font-size:12px;margin-right:2px}
 .chips button{padding:4px 10px;border-radius:99px}.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
@@ -35,12 +37,18 @@ th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}th{col
 .pill{display:inline-block;padding:0 8px;border-radius:99px;font-size:12px;border:1px solid var(--line)}
 [hidden]{display:none!important}
 body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,body.team #fs,body.team #tpw,body.team #tpw2,body.team #tex,body.team #drop>.st:not([id]){display:none!important}
-#lock{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}.lockc{max-width:380px;width:100%}
+#lock{position:fixed;inset:0;z-index:50;background:var(--grad),var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}.lockc{max-width:380px;width:100%}
 #sv button{padding:0 6px;margin:0 6px 0 2px}
 .rc{columns:2 360px;column-gap:28px}.rc>div{break-inside:avoid;margin-bottom:12px}.rules h3{font-size:13px;margin:0 0 4px}.rules ul{margin:0;padding-left:18px}.rules li{margin-bottom:4px}details{margin-top:6px}
 .leg{display:flex;gap:12px;font-size:12px;color:var(--mute);margin-top:6px}.leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px}
-#empty{padding:30px;text-align:center;color:var(--mute)}
-</style></head><body><div id="lock" hidden><div class="card lockc"><h1>Team dashboard</h1><p class="st">Enter the team password to open the dashboard.</p><input type="password" id="lpw" placeholder="Password" autocomplete="current-password" aria-label="Password" style="width:100%;margin:6px 0"><button class="pri" id="lgo">Unlock</button><p class="st" id="lmsg" role="status"></p></div></div><main>
+#empty{padding:30px;text-align:center;color:var(--ink)}
+#status{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:60;max-width:min(560px,calc(100% - 24px));display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:10px;background:var(--field);color:var(--ink);border:1px solid var(--acc);box-shadow:0 4px 18px rgba(0,0,0,.25);font-size:13px}
+#status.err{border-color:var(--err);color:var(--err)}#status.err b{display:inline-grid;place-items:center;flex:none;width:18px;height:18px;border-radius:50%;background:var(--err);color:var(--field);font-size:12px}
+#status button{margin-left:4px;padding:0 6px;border:0;background:transparent;color:inherit}
+.spin{flex:none;width:16px;height:16px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--acc);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
+</style></head><body><div id="status" role="status" aria-live="polite" hidden></div><div id="lock" hidden><div class="card lockc"><h1>Team dashboard</h1><p class="st">Enter the team password to open the dashboard.</p><input type="password" id="lpw" placeholder="Password" autocomplete="current-password" aria-label="Password" style="width:100%;margin:6px 0"><button class="pri" id="lgo">Unlock</button><p class="st" id="lmsg" role="status"></p></div></div><main>
 <h1>Outlet and voucher dashboard</h1>
 <p class="sub">Upload the raw exports as they come. Cleaning and linking happen in your browser.</p>
 <div class="drop" id="drop">
@@ -162,6 +170,18 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 <script>
 const TEAM=true;
 const $=s=>document.querySelector(s),g=(r,k)=>String(r[k]??'').trim(),nf=n=>Math.round(n).toLocaleString('en-IN');
+const tick=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20)));
+function busy(t){const s=$('#status');s.className='';s.innerHTML='<i class="spin" aria-hidden="true"></i><span></span>';s.lastChild.textContent=t;s.hidden=false;const m=$('#empty');if(!m.hidden)m.textContent=t}
+function done(){$('#status').hidden=true}
+function fail(t){const s=$('#status');s.className='err';s.innerHTML='<b aria-hidden="true">!</b><span></span><button type="button" aria-label="Dismiss message">✕</button>';s.children[1].textContent=t;s.lastChild.onclick=done;s.hidden=false}
+async function safeBuild(t){busy(t||'Building dashboard…');await tick();
+ try{if(!raw.outlets)fail('The outlets file is missing, so there is nothing to show yet. Upload the outlets CSV.');else{build();done()}}
+ catch(x){console.error(x);fail('Could not build the dashboard: '+(x&&x.message||x)+'. Check that the files are the right exports.')}
+ const m=$('#empty');if(!m.hidden)m.textContent='Nothing loaded yet.'}
+{const miss=[['Papa','CSV reader'],['XLSX','Excel export'],['Chart','charts']].filter(([v])=>typeof window[v]==='undefined').map(x=>x[1]);
+ if(miss.length)fail('Could not load the '+miss.join(', ')+' library. Check your internet connection and refresh the page.')}
+addEventListener('unhandledrejection',e=>fail('Something went wrong: '+((e.reason&&e.reason.message)||e.reason||'unknown error')));
+addEventListener('error',e=>{if(e.error)fail('Something went wrong: '+(e.error.message||e.message))});
 const k=s=>String(s||'').toLowerCase().replace(/[^a-z]/g,''),ti=s=>String(s||'').replace(/[^a-zA-Z ]/g,' ').replace(/\s+/g,' ').trim().toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
 const catOf=s=>{s=String(s).toLowerCase();return s.includes('store')?'Store':s.includes('vet')?'Vet':s.includes('breed')?'Breeder':s.includes('groom')?'Groomer':null};
 const ST=['Andhra Pradesh','Arunachal Pradesh','Assam','Bihar','Chhattisgarh','Goa','Gujarat','Haryana','Himachal Pradesh','Jharkhand','Karnataka','Kerala','Madhya Pradesh','Maharashtra','Manipur','Meghalaya','Mizoram','Nagaland','Odisha','Punjab','Rajasthan','Sikkim','Tamil Nadu','Telangana','Tripura','Uttar Pradesh','Uttarakhand','West Bengal','Delhi','Chandigarh','Jammu and Kashmir','Ladakh','Puducherry','Andaman and Nicobar','Lakshadweep'];
@@ -179,12 +199,15 @@ const okLat=v=>v>=6&&v<=38,okLon=v=>v>=68&&v<=98;
 const CC={GC:'#0f766e',Store:'#2563eb',Vet:'#c2410c',Breeder:'#6d28d9',Groomer:'#be185d'},GCC={'GC':'#0f766e','Non-GC':'#d97706','Unknown':'#94a3b8','N/A':'#64748b'},VTC={Prescription:'#0f766e',Proposal:'#d97706',Discount:'#6d28d9'};
 const raw={},DQ=[];let D={outlets:[],vouchers:[]},F={cat:'All',gc:'All',vt:'All',state:'All',city:'All',nc:'All',d0:'',d1:'',yr:'',mo:'',g:'auto',cso:'n',nm:'',test:false,q:'',n:50},CH={};
 
-async function load(files){if(TEAM)return;LM=[];
- for(const f of files){const txt=await f.text();const rows=await new Promise(r=>Papa.parse(f,{header:true,skipEmptyLines:true,delimitersToGuess:[';',',','\t'],transformHeader:h=>h.replace(/^\uFEFF/,'').trim().toLowerCase(),complete:x=>r(x.data)}));
-  const h=rows[0]||{};const kind=kindOf(h);if(kind)put(kind,rows,f.name);}
- const L=[['outlets','Outlets'],['users','Users'],['vouchers','Vouchers'],['rx','Recommendations'],['np','Plans'],['pv','Proposal vouchers'],['rv','Prescription vouchers'],['cust','Customers']];
- $('#fs').innerHTML=L.map(([a,b])=>raw[a]?`<b>${b} ✓ ${nf(raw[a].length)}</b>`:`${b} missing`).join(' · ');savedUI();$('#xmsg').textContent=LM.join(' · ');
- build();
+async function load(files){if(TEAM)return;LM=[];files=[...files];if(!files.length)return;const bad=[];
+ try{let n=0;
+  for(const f of files){busy(`Reading ${f.name} (${++n} of ${files.length})…`);await tick();
+   try{const rows=await new Promise((res,rej)=>Papa.parse(f,{header:true,skipEmptyLines:true,delimitersToGuess:[';',',','\t'],transformHeader:h=>h.replace(/^\uFEFF/,'').trim().toLowerCase(),complete:x=>res(x.data),error:rej}));
+    const kind=kindOf(rows[0]||{});if(kind)put(kind,rows,f.name);else bad.push(f.name)}catch(x){bad.push(f.name)}}
+  fstat();savedUI();$('#xmsg').textContent=LM.join(' · ');
+  await safeBuild('Building dashboard… this can take a few seconds');
+  if(bad.length)fail('Could not use: '+bad.join(', ')+'. Each file must be a CSV with the expected columns.')}
+ catch(x){console.error(x);fail('Could not load the files: '+(x&&x.message||x))}
 }
 function build(){
  const R=raw.outlets;if(!R)return;DQ.length=0;
@@ -364,7 +387,7 @@ $('#sv').onclick=async e=>{const k=e.target.dataset.del;if(!k)return;for(const x
 $('#cv').onclick=e=>{const tr=e.target.closest('tr[data-d]');if(!tr)return;const i=tr.dataset.d.indexOf('|'),t=tr.dataset.d.slice(0,i),k=tr.dataset.d.slice(i+1);CD=CD&&CD.t==t&&CD.k==k?null:{t,k};renderC();$('#t4').scrollIntoView({behavior:'smooth',block:'center'})};
 $('#cdt').onclick=()=>{CD=null;renderC()};
 $('#tb').onclick=e=>{const c=e.target.closest('td[data-o]');if(!c)return;CD={t:'o',k:c.dataset.o};CS=CN=CO=CT=CY=CU=CV='All';showTab('c');setTimeout(()=>$('#t4').scrollIntoView({behavior:'smooth',block:'center'}),50)};
-(async()=>{if(TEAM)return;try{for(const k of Object.keys(KN)){const v=await dbp('readonly',s=>s.get(k));if(v&&v.rows){raw[k]=v.rows;M[k]={name:v.name,t:v.t}}else if(v&&v.txt){raw[k]=Papa.parse(v.txt,{header:true,skipEmptyLines:true,delimitersToGuess:[';',',','\t'],transformHeader:h=>h.replace(/^\uFEFF/,'').trim().toLowerCase()}).data;M[k]=v}}}catch(e){}if(Object.keys(M).length){fstat();savedUI();build()}})();
+(async()=>{if(TEAM)return;$('#empty').textContent='Loading saved data…';try{for(const k of Object.keys(KN)){const v=await dbp('readonly',s=>s.get(k));if(v&&v.rows){raw[k]=v.rows;M[k]={name:v.name,t:v.t}}else if(v&&v.txt){raw[k]=Papa.parse(v.txt,{header:true,skipEmptyLines:true,delimitersToGuess:[';',',','\t'],transformHeader:h=>h.replace(/^\uFEFF/,'').trim().toLowerCase()}).data;M[k]=v}}}catch(e){}if(Object.keys(M).length){fstat();savedUI();await safeBuild('Building dashboard from saved data…')}else $('#empty').textContent='Nothing loaded yet.'})();
 const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const inP=d=>{if(!F.d0&&!F.d1&&!F.yr&&!F.mo)return true;if(!d)return false;return(!F.d0||d>=F.d0)&&(!F.d1||d<=F.d1)&&(!F.yr||d.slice(0,4)==F.yr)&&(!F.mo||d.slice(5,7)==F.mo)};
 const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
@@ -449,9 +472,9 @@ $('#bkup').onclick=async()=>{const m=$('#xmsg');if(!Object.keys(raw).length){m.t
  if(window.CompressionStream){data=new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());name+='.gz'}
  await saveBlob(name,data,'application/octet-stream');m.textContent='Backup saved: '+name}catch(e){m.textContent='Could not create the backup.'}};
 $('#rstr').onclick=()=>$('#rf').click();
-$('#rf').onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=$('#xmsg');try{let buf=await f.arrayBuffer();const u=new Uint8Array(buf);if(u[0]==0x1f&&u[1]==0x8b)buf=await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+$('#rf').onchange=async e=>{const f=e.target.files[0];if(!f)return;const m=$('#xmsg');try{busy('Reading backup…');await tick();let buf=await f.arrayBuffer();const u=new Uint8Array(buf);if(u[0]==0x1f&&u[1]==0x8b)buf=await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
  const o=JSON.parse(new TextDecoder().decode(buf));if(!o.files)throw 0;for(const k of Object.keys(o.files)){if(!KN[k])continue;raw[k]=o.files[k].rows;M[k]={name:o.files[k].name,t:Date.now()};try{await dbp('readwrite',s=>s.put({name:o.files[k].name,rows:raw[k],t:Date.now()},k))}catch(_){}}
- fstat();savedUI();build();m.textContent='Backup restored.'}catch(x){m.textContent='That file is not a valid backup.'}e.target.value=''};
+ fstat();savedUI();await safeBuild('Restoring backup…');m.textContent='Backup restored.'}catch(x){m.textContent='That file is not a valid backup.';fail('That file is not a valid backup.')}e.target.value=''};
 let PF={s:'All',l:'All',p:'All',n:'All',o:'All'},XP=null;
 const spOf=l=>/feline/i.test(l)?'cat':'dog',r1=x=>Math.round(x*10)/10;
 function renderP(){const K=$('#pk');
@@ -510,7 +533,7 @@ if(TEAM){document.body.classList.add('team');document.title='Team dashboard';$('
  const unlock=async()=>{const m=$('#lmsg'),b=$('#lgo'),p=$('#lpw').value;if(!p)return;b.disabled=true;m.textContent='Checking password...';
   try{if(!(window.crypto&&crypto.subtle))throw new Error('nocrypto');let r;try{r=await fetch('data.enc?v='+Date.now(),{cache:'no-store'});if(!r.ok)throw 0}catch(e){m.textContent='Could not load the data file. Open this page from its web address.';b.disabled=false;return}
    const o=await decBundle(await r.arrayBuffer(),p);for(const k of Object.keys(o.files)){if(KN[k]){raw[k]=o.files[k].rows;M[k]={name:o.files[k].name}}}
-   $('#tinfo').textContent='View only. Data updated '+new Date(o.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
+   $('#tinfo').textContent='View only. Data updated '+new Date(o.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';await safeBuild('Building dashboard…')}
   catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use Chrome, Edge, Safari or Firefox.':'Wrong password, or the data file is damaged.'}b.disabled=false};
  $('#lgo').onclick=unlock;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock()};setTimeout(()=>$('#lpw').focus(),50)}
 const KEEP=new Set(['added by','amount','bag','bag purchased','category','city','code','codice','company','contact','customer','customer email','customer phone','date','displayed name','email','id','identificativo','idoperator','internal customer id','lastname','latitude','longitude','managed by','name','phone number','privacy acceptance date','producr line purchased','product','product line','product purchased','promo','proposal','proposal account','proposal name','proposal status','proposers','recognized discount','sender account','species purchased','state','state/province','status','store voucher','type','used at','used in contact','used in id','used in internal customer id','used on','used on internal customer id','uset at']);
@@ -550,7 +573,7 @@ if(TEAM){const unlock2=async()=>{const m=$('#lmsg'),b=$('#lgo'),p=$('#lpw').valu
     const o=await decPart(await r.arrayBuffer(),p);if(o.id!==mf.id){m.textContent='The data is being updated. Try again in a few minutes.';b.disabled=false;return}
     for(const it of o.items){const a=tmp[it.kind]??=[];for(const x of it.rows)a.push(x)}}
    for(const k of Object.keys(tmp))if(KN[k]){raw[k]=tmp[k];M[k]={name:k}}
-   $('#tinfo').textContent='View only. Data updated '+new Date(mf.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';build()}
+   $('#tinfo').textContent='View only. Data updated '+new Date(mf.exported).toLocaleString();$('#lock').hidden=true;$('#lpw').value='';await safeBuild('Building dashboard…')}
   catch(e){m.textContent=e&&e.message=='nocrypto'?'This browser cannot open the data. Use a recent Chrome, Edge, Safari or Firefox.':'Wrong password, or the data files are damaged.'}b.disabled=false};
  $('#lgo').onclick=unlock2;$('#lpw').onkeydown=e=>{if(e.key=='Enter')unlock2()}}
 function renderNI(){const L=D.nameIssues||[];$('#nis').textContent='Outlet names to fix in your database ('+nf(L.length)+')';
