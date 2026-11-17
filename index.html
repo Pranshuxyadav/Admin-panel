@@ -47,6 +47,13 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 #status button{margin-left:4px;padding:0 6px;border:0;background:transparent;color:inherit}
 .spin{flex:none;width:16px;height:16px;border-radius:50%;border:2.5px solid var(--line);border-top-color:var(--acc);animation:sp .8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
+.msb{white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}.msb.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}.msl{color:var(--mute)}
+#msp{position:fixed;z-index:70;width:290px;max-width:calc(100vw - 16px);display:flex;flex-direction:column;gap:6px;padding:8px;background:var(--field);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.35)}
+#msp .msh{display:flex;gap:6px;flex-wrap:wrap}#msp .msh input{flex:1;min-width:120px}
+#msp .msl2{overflow:auto;min-height:0;flex:1}
+#msp .msl2 label{display:flex;gap:8px;align-items:center;padding:5px 6px;border-radius:5px;cursor:pointer}#msp .msl2 label:hover{background:var(--line)}
+#msp input[type=checkbox]{padding:0;width:16px;height:16px;flex:none;accent-color:var(--acc)}
+#msp .msf{display:flex;justify-content:space-between;align-items:center;gap:8px}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 </style></head><body><div id="status" role="status" aria-live="polite" hidden></div><div id="lock" hidden><div class="card lockc"><h1>Team dashboard</h1><p class="st">Enter the team password to open the dashboard.</p><input type="password" id="lpw" placeholder="Password" autocomplete="current-password" aria-label="Password" style="width:100%;margin:6px 0"><button class="pri" id="lgo">Unlock</button><p class="st" id="lmsg" role="status"></p></div></div><main>
 <h1>Outlet and voucher dashboard</h1>
@@ -67,7 +74,7 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
 <div id="app" hidden>
 <div class="bar">
  <div class="chips" id="c-cat"></div><div class="chips" id="c-vt"></div><div class="chips" id="c-nc"></div>
- <select id="s-state" aria-label="State"></select><select id="s-city" aria-label="City"></select>
+ <span id="s-state"></span><span id="s-city"></span>
  <label class="st"><input type="checkbox" id="t-test"> Include test accounts</label><button class="pri" id="xlo">Download Excel</button>
 </div>
 <div class="kpis" id="kpis"></div>
@@ -140,13 +147,13 @@ body.team #pick,body.team #mode,body.team #bkup,body.team #rstr,body.team #sv,bo
  <div class="bar"><div class="chips" id="c-src"></div></div>
  <p class="st" id="cwarn"></p><div class="kpis" id="ck"></div>
  <div class="grid">
-  <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">NC summary</h2><label class="st">Month <select id="ncm" aria-label="Month"></select></label></div><div class="tw"><table id="tn"></table></div><div id="ncd"></div><p class="st">Unique: customers whose first validated plan (or first validated plan after 12 months) was made by the NC. NP created: plans made. NP validated: plans whose coupon was validated, which is Unique plus follow-ups. This section has its own month picker.</p></div>
+  <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">NC summary</h2><label class="st">Month <select id="ncm" aria-label="Month"></select></label><span id="ncf"></span></div><div class="tw"><table id="tn"></table></div><div id="ncd"></div><p class="st">Unique: customers whose first validated plan (or first validated plan after 12 months) was made by the NC. NP created: plans made. NP validated: plans whose coupon was validated, which is Unique plus follow-ups. This section has its own month picker.</p></div>
   <div class="card"><h2>Unique customers over time</h2><div class="ch"><canvas id="h1"></canvas></div></div>
   <div class="card"><h2>Vouchers validated vs not, by source</h2><div class="ch"><canvas id="h2"></canvas></div></div>
   <div class="card w"><h2>By source (who created the recommendation or plan)</h2><div class="tw"><table id="t1"></table></div></div>
   <div class="card w"><h2>By NC</h2><div class="tw"><table id="t2"></table></div></div>
   <div class="card w"><h2>Top outlets by unique customers (credited to the outlet that made the first recommendation)</h2><div class="tw"><table id="t3"></table></div></div>
-  <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">Customers</h2><span id="cdt" class="pill" hidden style="cursor:pointer"></span><input id="cq" placeholder="Search name or phone" aria-label="Search customers"><select id="csort" aria-label="Sort customers"><option value="n">Most recs first</option><option value="new">Newest first</option><option value="old">Oldest first</option></select><select id="ctype" aria-label="Customer type"><option value="">All types</option><option>New</option><option>Returning</option></select><span class="st" id="ccnt"></span></div><details id="bulk" style="margin:0 0 10px"><summary class="st" style="cursor:pointer">Look up many customers at once</summary><p class="st" style="margin:6px 0">Paste phone numbers or emails, one per line or separated by commas. You get each customer’s full history, whatever filters and dates are selected.</p><textarea id="bk" rows="4" style="width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px" aria-label="Phone numbers or emails" placeholder="+919820418225&#10;9870799034"></textarea><div class="bar" style="margin:6px 0"><button class="pri" id="bkgo">Look up</button><button class="pri" id="bkxl">Download Excel</button><button id="bkclr">Clear</button><span class="st" id="bkmsg"></span></div><div class="tw"><table id="bkt"></table></div></details>
+  <div class="card w"><div class="bar" style="margin:0 0 8px"><h2 style="margin:0">Customers</h2><span id="cdt" class="pill" hidden style="cursor:pointer"></span><input id="cq" placeholder="Search name or phone" aria-label="Search customers"><select id="csort" aria-label="Sort customers"><option value="n">Most recs first</option><option value="new">Newest first</option><option value="old">Oldest first</option></select><span id="ctype"></span><span class="st" id="ccnt"></span></div><details id="bulk" style="margin:0 0 10px"><summary class="st" style="cursor:pointer">Look up many customers at once</summary><p class="st" style="margin:6px 0">Paste phone numbers or emails, one per line or separated by commas. You get each customer’s full history, whatever filters and dates are selected.</p><textarea id="bk" rows="4" style="width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 10px" aria-label="Phone numbers or emails" placeholder="+919820418225&#10;9870799034"></textarea><div class="bar" style="margin:6px 0"><button class="pri" id="bkgo">Look up</button><button class="pri" id="bkxl">Download Excel</button><button id="bkclr">Clear</button><span class="st" id="bkmsg"></span></div><div class="tw"><table id="bkt"></table></div></details>
 <div id="cdet"></div><div class="tw"><table id="t4"></table></div></div>
  </div></div>
 <div id="pv" hidden>
@@ -172,6 +179,36 @@ const TEAM=true;
 const $=s=>document.querySelector(s),g=(r,k)=>String(r[k]??'').trim(),nf=n=>Math.round(n).toLocaleString('en-IN');
 const tick=()=>new Promise(r=>requestAnimationFrame(()=>setTimeout(r,20)));
 function busy(t){const s=$('#status');s.className='';s.innerHTML='<i class="spin" aria-hidden="true"></i><span></span>';s.lastChild.textContent=t;s.hidden=false;const m=$('#empty');if(!m.hidden)m.textContent=t}
+const MS={};let MP=null;
+const sLbl=s=>s==='All'?'All':s.join(', '),inS=(s,v)=>s==='All'||s.includes(v),isOn=(s,v)=>s!=='All'&&s.includes(v);
+function msBtn(id,label,opts,sel,apply){const a=opts.map(x=>Array.isArray(x)?[String(x[0]),String(x[1])]:[String(x),String(x)]);
+ MS[id]={label,a,sel:sel==='All'?[]:sel.slice(),apply};const n=sel==='All'?0:sel.length,t=n==0?'All':n==1?(a.find(x=>x[0]==sel[0])||[0,sel[0]])[1]:n+' selected';
+ return `<button type="button" class="msb${n?' on':''}" data-ms="${xs(id)}" aria-haspopup="dialog" aria-expanded="false"><span class="msl">${xs(label)}:</span> ${xs(t)} \u25BE</button>`}
+const msCtl=(el,id,label,opts,sel,apply)=>{el.innerHTML=msBtn(id,label,opts,sel,apply)};
+function msClose(commit){if(!MP)return;const p=MP,m=MS[p.dataset.for],S=p._S;MP=null;p.remove();document.querySelectorAll('[data-ms][aria-expanded=true]').forEach(b=>b.setAttribute('aria-expanded','false'));
+ if(!commit||!m)return;const same=S.size==m.sel.length&&m.sel.every(x=>S.has(x));if(same)return;m.apply(S.size==0||S.size==m.a.length?'All':m.a.map(x=>x[0]).filter(x=>S.has(x)))}
+function msOpen(btn){msClose(true);const id=btn.dataset.ms,m=MS[id];if(!m)return;const S=new Set(m.sel),p=document.createElement('div');
+ p.id='msp';p.dataset.for=id;p._S=S;p.setAttribute('role','dialog');p.setAttribute('aria-label',m.label);
+ p.innerHTML=`<div class="msh">${m.a.length>8?'<input type="search" placeholder="Search\u2026" aria-label="Search options">':''}<button type="button" data-a="all">Select all</button><button type="button" data-a="none">Clear</button></div><div class="msl2"></div><div class="msf"><span class="st"></span><button type="button" class="pri" data-a="apply">Apply</button></div>`;
+ document.body.appendChild(p);btn.setAttribute('aria-expanded','true');MP=p;
+ const list=p.querySelector('.msl2'),cnt=p.querySelector('.msf .st'),q=p.querySelector('input[type=search]');
+ const shown=()=>{const t=q?q.value.toLowerCase():'';return m.a.filter(x=>!t||x[1].toLowerCase().includes(t))};
+ const draw=()=>{const L=shown();list.innerHTML=L.slice(0,300).map(x=>`<label><input type="checkbox" value="${xs(x[0])}"${S.has(x[0])?' checked':''}> <span>${xs(x[1])}</span></label>`).join('')+(L.length>300?`<p class="st">Showing 300 of ${L.length}. Type to narrow the list.</p>`:'')||'<p class="st">No matches</p>';
+  cnt.textContent=S.size?S.size+' selected':'Nothing ticked = All'};
+ draw();if(q)q.oninput=draw;
+ list.onchange=e=>{const c=e.target;if(c.type!='checkbox')return;c.checked?S.add(c.value):S.delete(c.value);cnt.textContent=S.size?S.size+' selected':'Nothing ticked = All'};
+ p.onclick=e=>{const a=e.target.dataset&&e.target.dataset.a;if(a=='all'){shown().forEach(x=>S.add(x[0]));draw()}else if(a=='none'){if(q&&q.value)shown().forEach(x=>S.delete(x[0]));else S.clear();draw()}else if(a=='apply')msClose(true)};
+ const r=btn.getBoundingClientRect(),w=Math.min(290,innerWidth-16);p.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';
+ const below=innerHeight-r.bottom-12,above=r.top-12,up=below<260&&above>below;p.style.maxHeight=Math.max(200,Math.min(460,up?above:below))+'px';
+ if(up)p.style.bottom=(innerHeight-r.top+4)+'px';else p.style.top=(r.bottom+4)+'px';
+ (q||p.querySelector('input'))?.focus()}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-ms]');
+ if(b){if(MP&&MP.dataset.for==b.dataset.ms)msClose(true);else msOpen(b);return}
+ if(MP&&!MP.contains(e.target))msClose(true)});
+document.addEventListener('keydown',e=>{if(e.key=='Escape'&&MP){const b=document.querySelector(`[data-ms="${MP.dataset.for}"]`);msClose(false);b&&b.focus()}});
+addEventListener('resize',()=>msClose(true));
+addEventListener('scroll',e=>{if(MP&&!MP.contains(e.target))msClose(true)},true);
+async function slow(fn,t){busy(t||'Loading\u2026');await tick();let ok=1;try{fn()}catch(x){ok=0;console.error(x);fail('Could not update this view: '+(x&&x.message||x))}if(ok)done()}
 function done(){$('#status').hidden=true}
 function fail(t){const s=$('#status');s.className='err';s.innerHTML='<b aria-hidden="true">!</b><span></span><button type="button" aria-label="Dismiss message">✕</button>';s.children[1].textContent=t;s.lastChild.onclick=done;s.hidden=false}
 async function safeBuild(t){busy(t||'Building dashboard…');await tick();
@@ -243,18 +280,23 @@ function build(){
   `${rows.filter(o=>o.test).length} test accounts are hidden unless you tick Include test accounts`);
  buildC();renderNI();fill();render();
 }
-function chips(id,label,opts,key){const el=$('#'+id);el.innerHTML=`<span>${label}</span><select aria-label="${label}">${['All',...opts].map(o=>`<option${F[key]===o?' selected':''}>${xs(o)}</option>`).join('')}</select>`;el.querySelector('select').onchange=e=>{F[key]=e.target.value;F.n=50;render()}}
+const CHP={};function chips(id,label,opts,key){CHP[id]=[label,opts,key];chipRef(id)}
+function chipRef(id){const[l,o,k]=CHP[id];msCtl($('#'+id),'o:'+id,l,o,F[k],v=>{F[k]=v;F.n=50;slow(render,'Updating\u2026')})}
 function fill(){$('#empty').hidden=true;initDate();showTab(TAB);
  chips('c-cat','Type',['GC','Store','Vet','Breeder','Groomer'],'cat');chips('c-vt','Voucher',['Prescription','Proposal','Discount'],'vt');chips('c-nc','NC',[...new Set(D.vouchers.filter(v=>v.t=='Proposal').map(v=>v.nc))].sort(),'nc');
- const S=[...new Set(D.outlets.map(o=>o.state))].sort();$('#s-state').innerHTML='<option value="All">All states</option>'+S.map(s=>`<option>${s}</option>`).join('');cities()}
-function cities(){const C=[...new Set(D.outlets.filter(o=>F.state=='All'||o.state==F.state).map(o=>o.city))].sort();$('#s-city').innerHTML='<option value="All">All cities</option>'+C.map(s=>`<option>${s}</option>`).join('');F.city='All'}
+ cities()}
+function cities(){const C=[...new Set(D.outlets.filter(o=>inS(F.state,o.state)).map(o=>o.city))].sort();
+ if(F.city!=='All'){F.city=F.city.filter(c=>C.includes(c));if(!F.city.length)F.city='All'}
+ const S=[...new Set(D.outlets.map(o=>o.state))].sort();if(F.state!=='All'){F.state=F.state.filter(c=>S.includes(c));if(!F.state.length)F.state='All'}
+ msCtl($('#s-state'),'o:state','State',S,F.state,v=>{F.state=v;F.n=50;cities();slow(render,'Updating\u2026')});
+ msCtl($('#s-city'),'o:city','City',C,F.city,v=>{F.city=v;F.n=50;slow(render,'Updating\u2026')})}
 function mk(id,type,data,opt={}){CH[id]?.destroy();const sc=getComputedStyle(document.documentElement);Chart.defaults.color=sc.getPropertyValue('--mute').trim()||'#667';Chart.defaults.borderColor=sc.getPropertyValue('--line').trim()||'#ddd';
  CH[id]=new Chart($('#'+id),{type,data,options:{maintainAspectRatio:false,plugins:{legend:{display:data.datasets.length>1||type=='doughnut',position:'bottom',labels:{boxWidth:10}}},...opt}})}
 const stk=(h)=>({indexAxis:h?'y':'x',scales:{x:{stacked:true},y:{stacked:true}}});
 function render(){
- const O=D.outlets.filter(o=>(F.test||!o.test)&&(F.cat=='All'||o.cat==F.cat)&&(F.gc=='All'||o.gc==F.gc)&&(F.state=='All'||o.state==F.state)&&(F.city=='All'||o.city==F.city));
+ const O=D.outlets.filter(o=>(F.test||!o.test)&&inS(F.cat,o.cat)&&inS(F.gc,o.gc)&&inS(F.state,o.state)&&inS(F.city,o.city));
  O.forEach(o=>o.a={v:0,pr:0,pp:0,amt:0,nc:{}});D.outlets.forEach(o=>o.uc=0);C.ev.forEach(e=>{if(e.o&&isU(e)&&inP(e.d))e.o.uc++});const set=new Set(O.map(o=>o.id)),VV=[];
- const VN=[];D.vouchers.forEach(v=>{if(!set.has(v.oid)||!inP(v.d)||(F.vt!='All'&&v.t!=F.vt))return;const o=D.byId.get(v.oid);if(v.t=='Proposal'){v.o=o;VN.push(v)}if(F.nc!='All'&&(v.t!='Proposal'||v.nc!=F.nc))return;if(v.t=='Proposal')o.a.nc[v.nc]=(o.a.nc[v.nc]||0)+1;o.a.v++;o.a.amt+=v.amt;if(v.t=='Prescription')o.a.pr++;if(v.t=='Proposal')o.a.pp++;v.o=o;VV.push(v)});
+ const VN=[];D.vouchers.forEach(v=>{if(!set.has(v.oid)||!inP(v.d)||!inS(F.vt,v.t))return;const o=D.byId.get(v.oid);if(v.t=='Proposal'){v.o=o;VN.push(v)}if(F.nc!=='All'&&(v.t!='Proposal'||!inS(F.nc,v.nc)))return;if(v.t=='Proposal')o.a.nc[v.nc]=(o.a.nc[v.nc]||0)+1;o.a.v++;o.a.amt+=v.amt;if(v.t=='Prescription')o.a.pr++;if(v.t=='Proposal')o.a.pp++;v.o=o;VV.push(v)});
  const cnt=(arr,f)=>arr.reduce((m,x)=>{const q=f(x);m[q]=(m[q]||0)+1;return m},{});
  const stores=O.filter(o=>o.cat=='Store'||o.cat=='GC'),gcs=cnt(stores,o=>o.cat),tot=VV.reduce((s,v)=>s+v.amt,0);
  const atStore=VV.filter(v=>v.o.cat=='Store'||v.o.cat=='GC'),atGC=atStore.filter(v=>v.o.cat=='GC').length;
@@ -276,11 +318,11 @@ function render(){
  drawMap(O);
  const ncm={};VN.forEach(v=>{const x=ncm[v.nc]??={nc:v.nc,n:0,amt:0,cu:new Set(),o:new Set(),gc:0,st:0,ot:0};x.n++;x.amt+=v.amt;x.cu.add(v.ck||v.code);x.o.add(v.oid);if(v.o.cat=='GC')x.gc++;else if(v.o.cat=='Store')x.st++;else x.ot++});
  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
- $('#nct').innerHTML=Object.values(ncm).sort((a,b)=>b.n-a.n).map(x=>`<tr data-nc="${esc(x.nc)}" style="cursor:pointer;${F.nc==x.nc?'font-weight:600;background:var(--bg)':''}"><td>${esc(x.nc)}</td><td class="r">${nf(x.n)}</td><td class="r">${nf(x.cu.size)}</td><td class="r">${x.o.size}</td><td class="r">${x.gc}</td><td class="r">${x.st}</td><td class="r">${x.ot}</td><td class="r">₹${nf(x.amt)}</td></tr>`).join('')||'<tr><td colspan="8">No NC proposals in this view</td></tr>';
+ $('#nct').innerHTML=Object.values(ncm).sort((a,b)=>b.n-a.n).map(x=>`<tr data-nc="${esc(x.nc)}" style="cursor:pointer;${isOn(F.nc,x.nc)?'font-weight:600;background:var(--bg)':''}"><td>${esc(x.nc)}</td><td class="r">${nf(x.n)}</td><td class="r">${nf(x.cu.size)}</td><td class="r">${x.o.size}</td><td class="r">${x.gc}</td><td class="r">${x.st}</td><td class="r">${x.ot}</td><td class="r">₹${nf(x.amt)}</td></tr>`).join('')||'<tr><td colspan="8">No NC proposals in this view</td></tr>';
  if(F.nc=='All')$('#cust').innerHTML='';else{const cm={};VV.forEach(v=>{const key=v.ck||v.code,c=cm[key]??={n:v.cu||'(no name)',ph:v.ph,v:0,amt:0,o:new Set()};c.v++;c.amt+=v.amt;c.o.add(v.o.name)});const L=Object.values(cm).sort((a,b)=>b.v-a.v);
-  $('#cust').innerHTML=`<h2 style="margin-top:14px">Customers of ${esc(F.nc)}: ${nf(L.length)} unique <button id="clr">Show all NCs</button></h2><div class="tw"><table><thead><tr><th>Customer</th><th>Phone</th><th>Validated at</th><th class="r">Vouchers</th><th class="r">Amount</th></tr></thead><tbody>${L.slice(0,100).map(c=>`<tr><td>${esc(c.n)}</td><td>${esc(c.ph||'–')}</td><td>${esc([...c.o].join(', '))}</td><td class="r">${c.v}</td><td class="r">₹${nf(c.amt)}</td></tr>`).join('')}</tbody></table></div>${L.length>100?'<p class="st">Showing the top 100 customers.</p>':''}`;$('#clr').onclick=()=>{F.nc='All';render()}}
+  $('#cust').innerHTML=`<h2 style="margin-top:14px">Customers of ${esc(sLbl(F.nc))}: ${nf(L.length)} unique <button id="clr">Show all NCs</button></h2><div class="tw"><table><thead><tr><th>Customer</th><th>Phone</th><th>Validated at</th><th class="r">Vouchers</th><th class="r">Amount</th></tr></thead><tbody>${L.slice(0,100).map(c=>`<tr><td>${esc(c.n)}</td><td>${esc(c.ph||'–')}</td><td>${esc([...c.o].join(', '))}</td><td class="r">${c.v}</td><td class="r">₹${nf(c.amt)}</td></tr>`).join('')}</tbody></table></div>${L.length>100?'<p class="st">Showing the top 100 customers.</p>':''}`;$('#clr').onclick=()=>{F.nc='All';render()}}
  const q=F.q.toLowerCase(),T=O.filter(o=>(!q||(o.name+' '+o.city).toLowerCase().includes(q))&&(F.nc=='All'||o.a.v>0)).sort((a,b)=>b.a.v-a.a.v);
- {const sn=document.querySelector('#c-nc select');if(sn)sn.value=F.nc}XO=T;$('#cnt').textContent=`${nf(T.length)} outlets`;
+ if(CHP['c-nc'])chipRef('c-nc');XO=T;$('#cnt').textContent=`${nf(T.length)} outlets`;
  $('#tb').innerHTML=T.slice(0,F.n).map(o=>`<tr><td>${o.name.replace(/</g,'&lt;')}</td><td><span class="pill" style="border-color:${CC[o.cat]}">${o.cat}</span></td><td>${o.city}</td><td>${o.state}</td><td class="r" data-o="${o.id}" style="cursor:pointer;text-decoration:underline">${o.uc||0}</td><td class="r">${o.a.v}</td><td class="r">${o.a.pr}</td><td class="r">${o.a.pp}</td><td>${Object.entries(o.a.nc).sort((a,b)=>b[1]-a[1]).map(([n,c])=>n.replace(/</g,'&lt;')+' ('+c+')').join(', ')||'–'}</td><td class="r">₹${nf(o.a.amt)}</td></tr>`).join('');
  $('#more').hidden=T.length<=F.n;
  $('#dq').innerHTML=DQ.map(x=>`<li>${x}</li>`).join('');
@@ -335,10 +377,11 @@ function buildC(){
 function renderC(){
  if(!C.ev.length){$('#ck').innerHTML='<div class="card">Load the outlets, recommendations, nutrition plans and customers files to see customers.</div>';return}
  const SRC=[...new Set(C.ev.map(e=>e.src))].sort();
- const op=(a,s)=>a.map(x=>{const v=Array.isArray(x)?x[0]:x,l=Array.isArray(x)?x[1]:x;return`<option value="${xs(v)}"${v==s?' selected':''}>${xs(l)}</option>`}).join(''),sl=(k,lab,a,s)=>`<label class="st">${lab} <select data-k="${k}" aria-label="${lab}">${op([['All','All'],...a],s)}</select></label>`,uniq=f=>[...new Set(C.ev.map(f).filter(Boolean))].sort();
+ const op=(a,s)=>a.map(x=>{const v=Array.isArray(x)?x[0]:x,l=Array.isArray(x)?x[1]:x;return`<option value="${xs(v)}"${v==s?' selected':''}>${xs(l)}</option>`}).join(''),sl=(k,lab,a,sv)=>msBtn('c:'+k,lab,a,sv,v=>{SET[k](v);slow(renderC,'Updating customers\u2026')}),uniq=f=>[...new Set(C.ev.map(f).filter(Boolean))].sort();
  const OUT=[...new Map(C.ev.filter(e=>e.o).map(e=>[e.o.id,e.o])).values()].sort((a,b)=>a.name.localeCompare(b.name)).map(o=>[o.id,o.lc?o.name:o.name+' ('+o.city+')']);
- $('#c-src').innerHTML=sl('s','Source',SRC,CS)+sl('n','NC',uniq(e=>e.nc),CN)+sl('o','Outlet',OUT,CO)+sl('t','State',uniq(e=>e.st),CT)+sl('y','City',uniq(e=>(CT=='All'||e.st==CT)?e.ct:''),CY)+sl('u','Counted as',['New','Follow-up','Re-counted (12m+)','Not validated'],CU)+'<button id="cclr">Clear filters</button><button class="pri" id="xlc">Download Excel</button>';
- const E0=C.ev.filter(e=>(CS=='All'||e.src==CS)&&(CN=='All'||e.nc==CN)&&(CO=='All'||(e.o&&e.o.id==CO))&&(CT=='All'||e.st==CT)&&(CY=='All'||e.ct==CY)&&inP(e.d)),E=E0.filter(e=>CU=='Not validated'?e.u=='Pending':e.u!='Pending'&&(CU=='All'||utag(e.u)==CU)),U=E.filter(isU),cn=u=>E.filter(e=>e.u==u).length;
+ $('#c-src').innerHTML=sl('s','Source',SRC,CS)+sl('n','NC',uniq(e=>e.nc),CN)+sl('o','Outlet',OUT,CO)+sl('t','State',uniq(e=>e.st),CT)+sl('y','City',uniq(e=>inS(CT,e.st)?e.ct:''),CY)+sl('u','Counted as',['New','Follow-up','Re-counted (12m+)','Not validated'],CU)+'<button id="cclr">Clear filters</button><button class="pri" id="xlc">Download Excel</button>';
+ msCtl($('#ctype'),'c:ty','Customer type',['New','Returning'],F.cty||'All',v=>{F.cty=v;slow(renderC,'Updating customers\u2026')});
+ const E0=C.ev.filter(e=>inS(CS,e.src)&&inS(CN,e.nc)&&(CO=='All'||(e.o&&CO.includes(e.o.id)))&&inS(CT,e.st)&&inS(CY,e.ct)&&inP(e.d)),E=E0.filter(e=>CU=='All'?e.u!='Pending':e.u=='Pending'?CU.includes('Not validated'):CU.includes(utag(e.u))),U=E.filter(isU),cn=u=>E.filter(e=>e.u==u).length;
  $('#cwarn').textContent=C.span<365?`Your files cover ${C.span} days (${C.min} to ${C.max}). Customers marked New are new only within this data, because earlier history is not available to check. Load 12 months or more of exports to confirm who is truly first-time, and to detect customers who come back after 12 months.`:`History covers ${C.span} days.`;
  const val=E0.filter(e=>e.ok).length,idle=[...C.regP].filter(p=>!C.by[p]).length;
  $('#ck').innerHTML=[[nf(U.length),'Unique customers (counted)'],[nf(cn('New')),'New customers (first time)'],[nf(new Set(E.filter(e=>e.u=='Repeat'||e.u=='Returning').map(e=>e.p)).size),'Returning customers (came again)'],[nf(cn('Repeat')),'Follow-ups (return visits, not counted as unique)'],[nf(cn('Returning')),'Re-counted as unique after 12 months'],[E0.length?Math.round(val/E0.length*100)+'%':'\u2013','Created and validated'],[nf(E0.filter(e=>e.u=='Pending').length),'Created but not validated (not counted)'],[nf(idle),'Registered, no plan or recommendation yet']].map(([n,l])=>`<div class="card kpi"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
@@ -346,7 +389,9 @@ function renderC(){
  if(!F.nm||(F.nm!='all'&&F.nm!='by'&&!mons.includes(F.nm)))F.nm=mons[mons.length-1]||'all';
  $('#ncm').innerHTML=mons.slice().reverse().map(m=>`<option value="${m}">${MN[+m.slice(5)-1]} ${m.slice(0,4)}</option>`).join('')+'<option value="all">All time</option><option value="by">Month by month</option>';$('#ncm').value=F.nm;
  const cell=L=>[L.filter(isU).length,L.length,L.filter(e=>e.u!='Pending').length];
- const nr=ncs.map(n=>({n,L:NP.filter(e=>e.nc==n)})).sort((a,b)=>b.L.length-a.L.length);
+ if(NCS!=='All'){NCS=NCS.filter(n=>ncs.includes(n));if(!NCS.length)NCS='All'}
+ msCtl($('#ncf'),'nc:sum','NC',ncs.slice().sort((a,b)=>a.localeCompare(b)),NCS,v=>{NCS=v;ND=null;slow(renderC,'Updating NC summary\u2026')});
+ const nr=ncs.filter(n=>inS(NCS,n)).map(n=>({n,L:NP.filter(e=>e.nc==n)})).sort((a,b)=>b.L.length-a.L.length);
  if(F.nm=='by'){$('#tn').innerHTML=`<thead><tr><th>NC</th>${mons.map(m=>`<th class="r">${MN[+m.slice(5)-1].slice(0,3)} ${m.slice(0,4)}<br><span class="st">Unique / NP created / NP validated</span></th>`).join('')}<th class="r">Total<br><span class="st">Unique / NP created / NP validated</span></th></tr></thead><tbody>${nr.map(r=>`<tr><td>${xs(r.n)}</td>${mons.concat(['']).map(m=>`<td class="r">${cell(m?r.L.filter(e=>e.d.slice(0,7)==m):r.L).map((v,i)=>`<span data-nd="${['u','np','pv'][i]}|${m||'all'}|${xs(r.n)}" style="cursor:pointer;text-decoration:underline">${v}</span>`).join(' / ')}</td>`).join('')}</tr>`).join('')}</tbody>`}
  else{const f=x=>F.nm=='all'?x:x.filter(e=>e.d.slice(0,7)==F.nm),rows=nr.map(r=>({n:r.n,c:cell(f(r.L))})).sort((a,b)=>b.c[1]-a.c[1]),T=[0,1,2].map(i=>rows.reduce((s,r)=>s+r.c[i],0));
   $('#tn').innerHTML=`<thead><tr><th>NC</th><th class="r">Unique</th><th class="r">NP created</th><th class="r">NP validated</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${xs(r.n)}</td>${['u','np','pv'].map((s,i)=>`<td class="r" data-nd="${s}|${F.nm}|${xs(r.n)}" style="cursor:pointer;text-decoration:underline">${r.c[i]}</td>`).join('')}</tr>`).join('')}<tr style="font-weight:600"><td>Total</td>${T.map(t=>`<td class="r">${t}</td>`).join('')}</tr></tbody>`}
@@ -366,11 +411,11 @@ function renderC(){
  const om={};E0.forEach(e=>{const o=e.o;if(!o)return;const x=om[o.id]??={o,ev:0,nw:0,rt:0,ok:0};x.ev++;if(e.u=='New')x.nw++;else if(e.u=='Returning')x.rt++;if(e.ok)x.ok++});
  $('#t3').innerHTML=`<thead><tr><th>Outlet</th><th>Type</th><th>City</th><th class="r">Unique (counted)</th><th class="r">New</th><th class="r">Re-counted 12m+</th><th class="r">Recs</th><th class="r">Validated</th></tr></thead><tbody>${Object.values(om).sort((a,b)=>b.nw+b.rt-a.nw-a.rt).slice(0,50).map(x=>`<tr data-d="o|${x.o.id}" style="cursor:pointer"><td>${xs(x.o.name)}</td><td>${x.o.cat}</td><td>${xs(x.o.city)}</td><td class="r">${x.nw+x.rt}</td><td class="r">${x.nw}</td><td class="r">${x.rt}</td><td class="r">${x.ev}</td><td class="r">${x.ok}</td></tr>`).join('')}</tbody>`;
  const cr=p=>{const k=C.by[p].filter(isU).pop();return k?(k.nc||(k.o?k.o.name:k.src)):''};const EL=CD?E.filter(e=>isU(e)&&(CD.t=='n'?e.nc==CD.k:CD.t=='s'?e.src==CD.k:e.o&&e.o.id==CD.k)):E;const pm={};EL.forEach(e=>{const x=pm[e.p]??={p:e.p,nm:e.nm,ph:e.ph,n:0,ok:0,u:new Set(),d:e.d};x.n++;if(e.ok)x.ok++;x.u.add(e.u);if(e.d<x.d)x.d=e.d});
- const PL2=Object.values(pm).filter(x=>(!CQ||(x.nm+' '+x.ph).toLowerCase().includes(CQ))&&(!F.cty||(x.u.has('New')&&x.u.size==1?'New':'Returning')==F.cty)).sort((a,b)=>F.cso=='new'?(a.d<b.d?1:-1):F.cso=='old'?(a.d<b.d?-1:1):b.n-a.n);
+ const PL2=Object.values(pm).filter(x=>(!CQ||(x.nm+' '+x.ph).toLowerCase().includes(CQ))&&(!F.cty||F.cty=='All'||F.cty.includes(x.u.has('New')&&x.u.size==1?'New':'Returning'))).sort((a,b)=>F.cso=='new'?(a.d<b.d?1:-1):F.cso=='old'?(a.d<b.d?-1:1):b.n-a.n);
  XC={PL2,cr,E};showPerson();$('#ccnt').textContent=nf(PL2.length)+' people';const cdn=CD?(CD.t=='o'?(D.byId.get(CD.k)||{}).name:CD.k):'';$('#cdt').hidden=!CD;$('#cdt').textContent=CD?'Credited to '+cdn+' ✕':'';
  $('#t4').innerHTML=`<thead><tr><th>Customer</th><th>Phone</th><th>First seen</th><th>Credited to</th><th>Type</th><th>Counted as</th><th class="r">Validated purchases</th></tr></thead><tbody>${PL2.slice(0,CD?500:100).map(x=>`<tr><td data-p="${xs(x.p)}" style="cursor:pointer;text-decoration:underline">${xs(x.nm)}</td><td>${xs(x.ph)}</td><td>${x.d}</td><td>${xs(cr(x.p))}</td><td>${x.u.has('New')&&x.u.size==1?'New':'Returning'}</td><td>${[...x.u].map(utag).join(', ')}</td><td class="r">${x.n}</td></tr>`).join('')}</tbody>`}
-$('#tabs').onclick=e=>{if(e.target.dataset.t)showTab(e.target.dataset.t)};
-$('#c-src').onclick=e=>{if(e.target.dataset.s){CS=e.target.dataset.s;renderC()}};
+$('#tabs').onclick=e=>{const t=e.target.dataset.t;if(t&&t!=TAB)slow(()=>showTab(t),'Loading '+({o:'Outlets',c:'Customers',p:'Products'}[t])+' data\u2026')};
+$('#c-src').onclick=e=>{if(e.target.dataset.s){CS=e.target.dataset.s;slow(renderC,'Updating customers\u2026')}};
 $('#cq').oninput=e=>{CQ=e.target.value.toLowerCase();renderC()};
 const KN={outlets:'Outlets',users:'Users',vouchers:'Vouchers',rx:'Recommendations',np:'Plans',pv:'Proposal vouchers',rv:'Prescription vouchers',cust:'Customers'},M={};
 const DB=()=>new Promise((res,rej)=>{try{const r=indexedDB.open('outlet-dash',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});
@@ -398,7 +443,7 @@ function initDate(){const ys=new Set();D.vouchers.forEach(v=>v.d&&ys.add(v.d.sli
 function syncDate(){$('#d-yr').value=F.yr;$('#d-mo').value=F.mo;$('#d-0').value=F.d0;$('#d-1').value=F.d1;$('#d-g').value=F.g;$('#csort').value=F.cso;
  const a=[];if(F.yr)a.push(F.yr);if(F.mo)a.push(MN[+F.mo-1]);if(F.d0||F.d1)a.push((F.d0||'start')+' to '+(F.d1||'today'));
  $('#d-n').textContent=a.length?'Showing '+a.join(', ')+'. Vouchers use the validation date; recommendations and plans use the creation date.':'Showing all dates'}
-function dateChanged(){syncDate();F.n=50;TAB=='c'?renderC():TAB=='p'?renderP():render()}
+function dateChanged(){syncDate();F.n=50;slow(()=>{TAB=='c'?renderC():TAB=='p'?renderP():render()},'Applying dates\u2026')}
 $('#d-pre').onchange=e=>{const v=e.target.value,t=new Date(),y=t.getFullYear(),m=t.getMonth();F.yr=F.mo=F.d0=F.d1='';
  if(v=='30'||v=='90'){const s=new Date(t);s.setDate(s.getDate()-(+v-1));F.d0=iso(s);F.d1=iso(t)}
  else if(v=='tm'){F.d0=iso(new Date(y,m,1));F.d1=iso(new Date(y,m+1,0))}
@@ -411,11 +456,11 @@ $('#d-1').onchange=e=>{F.d1=e.target.value;$('#d-pre').value='';dateChanged()};
 $('#d-g').onchange=e=>{F.g=e.target.value;dateChanged()};
 $('#csort').onchange=e=>{F.cso=e.target.value;renderC()};
 $('#d-x').onclick=()=>{F.d0=F.d1=F.yr=F.mo='';$('#d-pre').value='';dateChanged()};
-let ND=null,CP=null,CN='All',CO='All',CT='All',CY='All',CU='All',CV='All';
+let NCS='All',ND=null,CP=null,CN='All',CO='All',CT='All',CY='All',CU='All',CV='All';
 const isU=e=>e.u=='New'||e.u=='Returning',utag=u=>u=='Pending'?'Not validated':u=='Repeat'?'Follow-up':u=='Returning'?'Re-counted (12m+)':'New',SET={s:v=>CS=v,n:v=>CN=v,o:v=>CO=v,t:v=>{CT=v;CY='All'},y:v=>CY=v,u:v=>CU=v,v:v=>CV=v};
-$('#c-src').onchange=e=>{const f=SET[e.target.dataset.k];if(f){f(e.target.value);renderC()}};
-$('#c-src').onclick=e=>{if(e.target.id=='cclr'){CS=CN=CO=CT=CY=CU=CV='All';renderC()}};
-$('#ctype').onchange=e=>{F.cty=e.target.value;renderC()};
+$('#c-src').onchange=e=>{const f=SET[e.target.dataset.k];if(f){f(e.target.value);slow(renderC,'Updating customers\u2026')}};
+$('#c-src').onclick=e=>{if(e.target.id=='cclr'){CS=CN=CO=CT=CY=CU=CV='All';slow(renderC,'Updating customers\u2026')}};
+$('#ctype').onchange=e=>{F.cty=e.target.value;slow(renderC,'Updating customers\u2026')};
 function showPerson(){const el=$('#cdet');if(!CP||!C.by[CP]){el.innerHTML='';return}
  const ev=C.by[CP],V=D.vouchers.filter(v=>v.p===CP).sort((a,b)=>a.d<b.d?-1:1),e0=ev[0],tag=utag,VS=ev.flatMap(e=>(e.vs||[]).map(v=>({v,e})));
  el.innerHTML=`<div class="card" style="margin:0 0 10px;background:var(--bg)"><h2>${xs(e0.nm)} · ${xs(e0.ph)} <button id="cdx">Close</button></h2><p class="st">${ev.length} plans and recommendations, ${VS.length?VS.length+' vouchers created, '+VS.filter(x=>x.v.st=='used').length+' used':V.length+' vouchers validated'}. This is the customer’s full history, whatever dates are selected above.</p>
@@ -423,7 +468,7 @@ function showPerson(){const el=$('#cdet');if(!CP||!C.by[CP]){el.innerHTML='';ret
 <h2 style="margin-top:10px">${VS.length?'Vouchers created for this customer':'Vouchers validated at outlets'}</h2>${VS.length?`<div class="tw"><table><thead><tr><th>Voucher code</th><th>Created for</th><th>Voucher created</th><th>Status</th><th>Validated on</th><th>Validated at</th><th class="r">Amount</th></tr></thead><tbody>${VS.slice().sort((a,b)=>a.v.cr<b.v.cr?-1:1).map(({v,e})=>`<tr><td>${xs(v.code)}</td><td>${e.kind} ${e.t.slice(0,10)} (${xs(e.nc||(e.o?e.o.name:e.src))})</td><td>${v.cr.slice(0,16)}</td><td>${v.st=='used'?'Used':v.st=='deleted'?'Deleted':v.st=='expired'?'Expired':'Not used'}</td><td>${v.ua?v.ua.slice(0,16):'\u2013'}</td><td>${v.st=='used'?xs(v.o?v.o.name+' ('+v.o.cat+')':v.nm||'\u2013'):'\u2013'}</td><td class="r">${vtxt(v)}</td></tr>`).join('')}</tbody></table></div>`:V.length?`<div class="tw"><table><thead><tr><th>Validated on</th><th>Voucher code</th><th>Type</th><th>Validated at</th><th>NC</th><th class="r">Amount</th></tr></thead><tbody>${V.map(v=>{const o=D.byId.get(v.oid);return`<tr><td>${v.d||'\u2013'}</td><td>${xs(v.code)}</td><td>${v.t}</td><td>${xs(o.name)} (${o.cat})</td><td>${v.t=='Proposal'?xs(v.nc):'\u2013'}</td><td class="r">\u20b9${nf(v.amt)}</td></tr>`}).join('')}</tbody></table></div>`:'<p class="st">No validated vouchers found for this customer.</p>'}</div>`;
  $('#cdx').onclick=()=>{CP=null;showPerson()}}
 $('#t4').onclick=e=>{const c=e.target.closest('td[data-p]');if(!c)return;CP=CP==c.dataset.p?null:c.dataset.p;showPerson();if(CP)$('#cdet').scrollIntoView({behavior:'smooth',block:'nearest'})};
-$('#ncm').onchange=e=>{F.nm=e.target.value;ND=null;renderC()};
+$('#ncm').onchange=e=>{F.nm=e.target.value;ND=null;slow(renderC,'Updating NC summary\u2026')};
 $('#tn').onclick=e=>{const c=e.target.closest('[data-nd]');if(!c)return;const a=c.dataset.nd.split('|'),s=a[0],m=a[1],nc=a.slice(2).join('|');ND=ND&&ND.s==s&&ND.m==m&&ND.nc==nc?null:{s,m,nc};renderC();setTimeout(()=>$('#ncd').scrollIntoView({behavior:'smooth',block:'nearest'}),50)};
 let XC=null,XO=null;
 const vact=e=>(e.vs||[]).filter(v=>v.st!='deleted'),vtxt=v=>v.amt!=null?'\u20b9'+nf(v.amt):v.lo!=null?(v.lo==v.hi?'\u20b9'+nf(v.lo):'\u20b9'+nf(v.lo)+' to \u20b9'+nf(v.hi)):'\u2013';
@@ -436,7 +481,7 @@ async function xdl(S,name){const m=$('#xmsg');m.textContent='';try{const dl=wind
  const wb=XLSX.utils.book_new();S.forEach(([n,s])=>XLSX.utils.book_append_sheet(wb,s,n.slice(0,31)));
  const data=XLSX.write(wb,{type:'array',bookType:'xlsx'});if(dl)await dl.save({filename:name,data});else{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}m.textContent='Saved '+name}catch(e){m.textContent=e&&e.code=='declined'?'Download cancelled.':'Could not create the Excel file ('+((e&&e.code)||'error')+').'}}
 function exportC(){if(!XC)return;const{PL2,cr,E}=XC,A=XLSX.utils.aoa_to_sheet;
- const S=[['Filters',fl([['Dates',$('#d-n').textContent],['Source',CS],['NC',CN],['Outlet',CO=='All'?'All':(D.byId.get(CO)||{}).name],['State',CT],['City',CY],['Counted as',CU],['Customer type',F.cty||'All']])],
+ const S=[['Filters',fl([['Dates',$('#d-n').textContent],['Source',sLbl(CS)],['NC',sLbl(CN)],['Outlet',CO=='All'?'All':CO.map(i=>(D.byId.get(i)||{}).name).join(', ')],['State',sLbl(CT)],['City',sLbl(CY)],['Counted as',sLbl(CU)],['Customer type',sLbl(F.cty||'All')]])],
   ['Customers',A([['Customer','Phone','First seen','Credited to','Type','Counted as','Validated purchases'],...PL2.map(x=>[x.nm,x.ph,x.d,cr(x.p),x.u.has('New')&&x.u.size==1?'New':'Returning',[...x.u].map(utag).join(', '),x.n])])],
   ['Plans & recommendations',A([['Date and time','Customer','Phone','Kind','Created by','Source','State','City','Counted as','Validated','Vouchers','Vouchers used','Voucher amount (used / issued)','Voucher codes'],...E.map(e=>{const a=vact(e);return[e.t,e.nm,e.ph,e.kind,e.nc||(e.o?e.o.name:e.src),e.src,e.st,e.ct,utag(e.u),e.ok?'Yes':'No',a.length||(e.code?1:0),a.filter(v=>v.st=='used').length,vcol(e)[1],a.map(v=>v.code).join(', ')||e.code||'']})])]];
  if(E.some(e=>e.vs))S.splice(3,0,['Vouchers',A([['Voucher code','Created for','Plan or recommendation created','Created by','Customer','Phone','Voucher created','Status','Validated on','Validated at','Amount','Discount range low','Discount range high'],...E.flatMap(e=>(e.vs||[]).map(v=>[v.code,e.kind,e.t,e.nc||(e.o?e.o.name:e.src),e.nm,e.ph,v.cr,v.st,v.ua||'',v.o?v.o.name:(v.nm||''),v.amt??'',v.lo??'',v.hi??'']))])]);
@@ -444,7 +489,7 @@ function exportC(){if(!XC)return;const{PL2,cr,E}=XC,A=XLSX.utils.aoa_to_sheet;
  if(CP){const t=document.querySelectorAll('#cdet table');if(t[0])S.push(['Customer history',ts(t[0])]);if(t[1])S.push(['Customer vouchers',ts(t[1])])}
  xdl(S,'customers-report-'+new Date().toISOString().slice(0,10)+'.xlsx')}
 function exportO(){if(!XO)return;const A=XLSX.utils.aoa_to_sheet;
- xdl([['Filters',fl([['Dates',$('#d-n').textContent],['Type',F.cat],['Voucher type',F.vt],['NC',F.nc],['State',F.state],['City',F.city],['Test accounts',F.test?'Included':'Hidden']])],
+ xdl([['Filters',fl([['Dates',$('#d-n').textContent],['Type',sLbl(F.cat)],['Voucher type',sLbl(F.vt)],['NC',sLbl(F.nc)],['State',sLbl(F.state)],['City',sLbl(F.city)],['Test accounts',F.test?'Included':'Hidden']])],
   ['Outlets',A([['Outlet','Type','City','State','Unique customers','Vouchers','Prescription','Proposal','NC (proposals)','Amount'],...XO.map(o=>[o.name,o.cat,o.city,o.state,o.uc||0,o.a.v,o.a.pr,o.a.pp,Object.entries(o.a.nc).sort((a,b)=>b[1]-a[1]).map(([n,c])=>n+' ('+c+')').join(', '),o.a.amt])])],
   ['NC performance',ts($('#nct').closest('table'))]],'outlets-report-'+new Date().toISOString().slice(0,10)+'.xlsx')}
 $('#c-src').addEventListener('click',e=>{if(e.target.id=='xlc')exportC()});$('#xlo').onclick=exportO;
@@ -479,10 +524,10 @@ let PF={s:'All',l:'All',p:'All',n:'All',o:'All'},XP=null;
 const spOf=l=>/feline/i.test(l)?'cat':'dog',r1=x=>Math.round(x*10)/10;
 function renderP(){const K=$('#pk');
  if(!C.pd||!C.pd.length){K.innerHTML='<div class="card">Load the proposal vouchers and prescription vouchers files to see product analytics.</div>';$('#pf').innerHTML='';return}
- const sl=(k,lab,a,s)=>`<label class="st">${lab} <select data-k="${k}" aria-label="${lab}"><option>All</option>${a.map(x=>`<option${x==s?' selected':''}>${xs(x)}</option>`).join('')}</select></label>`,uq=f=>[...new Set(C.pd.map(f).filter(Boolean))].sort();
+ const sl=(k,lab,a,sv)=>msBtn('p:'+k,lab,a,sv,v=>{SETP[k](v);slow(renderP,'Updating products\u2026')}),uq=f=>[...new Set(C.pd.map(f).filter(Boolean))].sort();
  $('#pf').innerHTML=sl('s','Source',['Proposal','Prescription'],PF.s)+sl('l','Product line',uq(x=>x.pl),PF.l)+sl('p','Species',['dog','cat'],PF.p)+sl('n','NC',uq(x=>x.nc),PF.n)+sl('o','Outlet type',['GC','Store','Vet','Breeder','Groomer'],PF.o)+'<button id="pclr">Clear filters</button><button class="pri" id="xlp">Download Excel</button>';
- const ok2=x=>(PF.s=='All'||x.src==PF.s)&&(PF.l=='All'||x.pl==PF.l)&&(PF.p=='All'||x.sp==PF.p)&&(PF.n=='All'||x.nc==PF.n);
- const US=C.pd.filter(x=>x.st=='used'&&ok2(x)&&(PF.o=='All'||(x.o&&x.o.cat==PF.o))&&inP((x.ua||'').slice(0,10))),CR=C.pd.filter(x=>x.src=='Proposal'&&ok2(x)&&inP(x.cr.slice(0,10)));
+ const ok2=x=>inS(PF.s,x.src)&&inS(PF.l,x.pl)&&inS(PF.p,x.sp)&&inS(PF.n,x.nc);
+ const US=C.pd.filter(x=>x.st=='used'&&ok2(x)&&(PF.o=='All'||(x.o&&PF.o.includes(x.o.cat)))&&inP((x.ua||'').slice(0,10))),CR=C.pd.filter(x=>x.src=='Proposal'&&ok2(x)&&inP(x.cr.slice(0,10)));
  const cnt=(L,f)=>{const m={};L.forEach(x=>{const k=f(x);m[k]=(m[k]||0)+1});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
  const kg=US.reduce((s,x)=>s+x.bg,0),disc=US.reduce((s,x)=>s+(x.amt||0),0),cu=CR.filter(x=>x.st=='used').length,tl=cnt(US,x=>x.pl)[0];
  K.innerHTML=[[nf(US.length),'Bags purchased (vouchers used)'],[nf(kg),'Kg purchased'],['\u20b9'+nf(disc),'Discount used'],[CR.length?Math.round(cu/CR.length*100)+'%':'\u2013','Proposal vouchers used'],[tl?tl[0]:'\u2013','Top product line']].map(([n,l])=>`<div class="card kpi"><div class="n" style="${n.length>12?'font-size:18px':''}">${n}</div><div class="l">${l}</div></div>`).join('');
@@ -499,16 +544,16 @@ function renderP(){const K=$('#pk');
  tbl('#tp1',['Product line','Species','Bags purchased','From proposals','From prescriptions','Kg','Discount (\u20b9)','Proposal vouchers created','Used'],lset.map(l=>{const u=US.filter(x=>x.pl==l),c=CR.filter(x=>x.pl==l),cu2=c.filter(x=>x.st=='used').length;return[l,spOf(l),u.length,u.filter(x=>x.src=='Proposal').length,u.filter(x=>x.src=='Prescription').length,r1(u.reduce((s,x)=>s+x.bg,0)),u.reduce((s,x)=>s+(x.amt||0),0),c.length,c.length?Math.round(cu2/c.length*100)+'%':'\u2013']}).sort((a,b)=>b[2]-a[2]),2);
  const pks=[...new Set([...US,...CR].map(x=>x.pl+'|'+x.pr))];
  tbl('#tp2',['Product line','Product','Bags purchased','Kg','Discount (\u20b9)','Proposal vouchers created','Used'],pks.map(k=>{const i=k.indexOf('|'),l=k.slice(0,i),p=k.slice(i+1),u=US.filter(x=>x.pl==l&&x.pr==p),c=CR.filter(x=>x.pl==l&&x.pr==p),cu2=c.filter(x=>x.st=='used').length;return[l,p,u.length,r1(u.reduce((s,x)=>s+x.bg,0)),u.reduce((s,x)=>s+(x.amt||0),0),c.length,c.length?Math.round(cu2/c.length*100)+'%':'\u2013']}).sort((a,b)=>b[2]-a[2]).slice(0,100),2);
- const EV=C.ev.filter(e=>e.pl&&inP(e.d)&&(PF.l=='All'||e.pl==PF.l)&&(PF.p=='All'||spOf(e.pl)==PF.p)&&(PF.n=='All'||e.nc==PF.n)&&(PF.s=='All'||(PF.s=='Proposal')==(e.kind=='Nutrition plan')));
+ const EV=C.ev.filter(e=>e.pl&&inP(e.d)&&inS(PF.l,e.pl)&&inS(PF.p,spOf(e.pl))&&inS(PF.n,e.nc)&&inS(PF.s,e.kind=='Nutrition plan'?'Proposal':'Prescription'));
  tbl('#tp3',['Product line','Species','Plans by NCs','Recommendations by stores and vets','Validated','Validated share'],[...new Set(EV.map(e=>e.pl))].sort().map(l=>{const a=EV.filter(e=>e.pl==l),p=a.filter(e=>e.kind=='Nutrition plan').length,v=a.filter(e=>e.ok).length;return[l,spOf(l),p,a.length-p,v,a.length?Math.round(v/a.length*100)+'%':'\u2013']}).sort((a,b)=>b[2]+b[3]-a[2]-a[3]),2);
  XP={US,CR}}
 function exportP(){if(!XP)return;const A=XLSX.utils.aoa_to_sheet,{US,CR}=XP;
- xdl([['Filters',fl([['Dates',$('#d-n').textContent],['Source',PF.s],['Product line',PF.l],['Species',PF.p],['NC',PF.n],['Outlet type',PF.o]])],['By product line',ts($('#tp1'))],['By product',ts($('#tp2'))],['Planned & recommended',ts($('#tp3'))],
+ xdl([['Filters',fl([['Dates',$('#d-n').textContent],['Source',sLbl(PF.s)],['Product line',sLbl(PF.l)],['Species',sLbl(PF.p)],['NC',sLbl(PF.n)],['Outlet type',sLbl(PF.o)]])],['By product line',ts($('#tp1'))],['By product',ts($('#tp2'))],['Planned & recommended',ts($('#tp3'))],
   ['Purchases',A([['Validated on','Voucher code','Source','Product line','Product','Species','Bag (kg)','Discount','Voucher created','NC','Validated at','Outlet type'],...US.map(x=>[x.ua,x.code,x.src,x.pl,x.pr,x.sp,x.bg,x.amt||0,x.cr,x.nc,x.o?x.o.name:(x.nm||''),x.o?x.o.cat:''])])],
   ['Proposal vouchers',A([['Voucher code','Status','Product line','Product','Bag (kg)','Amount','Created','Used on','NC'],...CR.map(x=>[x.code,x.st,x.pl,x.pr,x.bg,x.amt,x.cr,x.ua||'',x.nc])])]],'products-report-'+new Date().toISOString().slice(0,10)+'.xlsx')}
 const SETP={s:v=>PF.s=v,l:v=>PF.l=v,p:v=>PF.p=v,n:v=>PF.n=v,o:v=>PF.o=v};
-$('#pf').onchange=e=>{const f=SETP[e.target.dataset.k];if(f){f(e.target.value);renderP()}};
-$('#pf').onclick=e=>{if(e.target.id=='pclr'){PF={s:'All',l:'All',p:'All',n:'All',o:'All'};renderP()}else if(e.target.id=='xlp')exportP()};
+$('#pf').onchange=e=>{const f=SETP[e.target.dataset.k];if(f){f(e.target.value);slow(renderP,'Updating products\u2026')}};
+$('#pf').onclick=e=>{if(e.target.id=='pclr'){PF={s:'All',l:'All',p:'All',n:'All',o:'All'};slow(renderP,'Updating products\u2026')}else if(e.target.id=='xlp')exportP()};
 const slim=rows=>rows.map(r=>{const o={};for(const k in r){const v=r[k];if(v!==''&&v!=null)o[k]=v}return o});
 const deriveKey=async(pw,salt,use)=>{const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:600000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,use)};
 async function encBundle(obj,pw){const raw0=new TextEncoder().encode(JSON.stringify(obj)),zip=!!window.CompressionStream;
@@ -582,8 +627,8 @@ $('#xln').onclick=()=>{const L=D.nameIssues||[];xdl([['Outlet names to fix',XLSX
 $('#pick').onclick=()=>$('#f').click();$('#f').onchange=e=>load(e.target.files);
 const dz=$('#drop');['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on')}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on')}));dz.addEventListener('drop',e=>load(e.dataTransfer.files));
-$('#s-state').onchange=e=>{F.state=e.target.value;cities();render()};$('#s-city').onchange=e=>{F.city=e.target.value;render()};
-$('#nct').onclick=e=>{const tr=e.target.closest('tr');if(!tr||!tr.dataset.nc)return;F.nc=F.nc==tr.dataset.nc?'All':tr.dataset.nc;F.n=50;render()};
+
+$('#nct').onclick=e=>{const tr=e.target.closest('tr');if(!tr||!tr.dataset.nc)return;F.nc=(F.nc!=='All'&&F.nc.length==1&&F.nc[0]==tr.dataset.nc)?'All':[tr.dataset.nc];F.n=50;render()};
 $('#t-test').onchange=e=>{F.test=e.target.checked;render()};$('#q').oninput=e=>{F.q=e.target.value;F.n=50;render()};$('#more').onclick=()=>{F.n+=100;render()};
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>D.outlets.length&&render());
 addEventListener('resize',()=>D.outlets.length&&render());
